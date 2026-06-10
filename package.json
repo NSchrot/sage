@@ -1,0 +1,21 @@
+{
+  "name": "sage-monorepo",
+  "private": true,
+  "workspaces": [
+    "apps/api",
+    "apps/web"
+  ],
+  "scripts": {
+    "install:all": "npm install",
+    "docker:db": "docker-compose up -d",
+    "db:migrate": "npm run db:migrate -w apps/api",
+    "db:seed": "npm run db:seed -w apps/api",
+    "db:studio": "npm run db:studio -w apps/api",
+    "dev:api": "npm run dev -w apps/api",
+    "dev:web": "npm run dev -w apps/web",
+    "dev": "concurrently \"npm run dev:api\" \"npm run dev:web\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

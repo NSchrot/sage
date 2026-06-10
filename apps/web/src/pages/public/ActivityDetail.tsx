@@ -1,0 +1,386 @@
+import React, { useEffect, useState } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+import { Calendar, MapPin, Users, ArrowLeft, AlertCircle, CheckCircle2, ClipboardList, Info, Mail } from 'lucide-react';
+import { LayoutAutenticado } from '../../components/layout/LayoutAutenticado';
+import { Navbar } from '../../components/Navbar';
+import { Card } from '../../components/common/Card';
+import { Badge } from '../../components/common/Badge';
+import { Button } from '../../components/common/Button';
+
+interface Activity {
+  id: string;
+  title: string;
+  description: string;
+  location: string;
+  startsAt: string;
+  endsAt: string;
+  capacity: number;
+  createdById: string;
+  _count: {
+    enrollments: number;
+  };
+  creator: {
+    name: string;
+    email: string;
+  };
+}
+
+interface Enrollment {
+  id: string;
+  createdAt: string;
+  user: {
+    id: string;
+    name: string;
+    email: string;
+  };
+}
+
+export const ActivityDetail: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+  const [activity, setActivity] = useState<Activity | null>(null);
+  const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
+  const [isEnrolled, setIsEnrolled] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  const { isAuthenticated, isOrganizer, isParticipant, user, token } = useAuth();
+  const navigate = useNavigate();
+
+  const fetchDetails = async () => {
+    if (!id) return;
+    try {
+      setLoading(true);
+      setError(null);
+
+      const activityRes = await fetch(`${import.meta.env.VITE_API_URL}/activities/${id}`);
+      if (!activityRes.ok) {
+        if (activityRes.status === 404) throw new Error('Atividade não encontrada.');
+        throw new Error('Erro ao carregar detalhes da atividade.');
+      }
+      const activityData = await activityRes.json();
+      setActivity(activityData);
+
+      if (isAuthenticated && isOrganizer && token) {
+        const enrollRes = await fetch(`${import.meta.env.VITE_API_URL}/activities/${id}/enrollments`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (enrollRes.ok) {
+          const enrollData = await enrollRes.json();
+          setEnrollments(enrollData);
+        }
+      }
+
+      if (isAuthenticated && isParticipant && token) {
+        const myEnrollRes = await fetch(`${import.meta.env.VITE_API_URL}/my-enrollments`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (myEnrollRes.ok) {
+          const myEnrollData = await myEnrollRes.json();
+          const activeEnrollment = myEnrollData.find(
+            (e: any) => e.activityId === id && e.status === 'ATIVA'
+          );
+          setIsEnrolled(!!activeEnrollment);
+        }
+      }
+    } catch (err: any) {
+      setError(err.message || 'Erro de conexão com o servidor.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDetails();
+  }, [id, isAuthenticated, isOrganizer, isParticipant, token]);
+
+  const handleEnroll = async () => {
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+    if (!id || !token) return;
+
+    setActionError(null);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/activities/${id}/enroll`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || 'Erro ao se inscrever.');
+      }
+      
+      setIsEnrolled(true);
+      fetchDetails();
+    } catch (err: any) {
+      setActionError(err.message);
+    }
+  };
+
+  const handleCancelEnrollment = async () => {
+    if (!id || !token) return;
+
+    setActionError(null);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/activities/${id}/cancel`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || 'Erro ao cancelar inscrição.');
+      }
+
+      setIsEnrolled(false);
+      fetchDetails();
+    } catch (err: any) {
+      setActionError(err.message);
+    }
+  };
+
+  const formatDateTime = (dateString: string) => {
+    return new Date(dateString).toLocaleString('pt-BR', {
+      weekday: 'long',
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-emerald-500"></div>
+      </div>
+    );
+  }
+
+  if (error || !activity) {
+    return (
+      <div className="max-w-3xl mx-auto px-4 py-12 text-center">
+        <AlertCircle className="w-14 h-14 text-rose-500 mx-auto mb-4" />
+        <h2 className="text-xl font-bold text-slate-900 dark:text-white">Oops! Algo deu errado</h2>
+        <p className="text-slate-600 dark:text-slate-400 mt-2">{error || 'Atividade não encontrada.'}</p>
+        <Link
+          to="/activities"
+          className="inline-flex items-center gap-1.5 mt-6 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium rounded-xl transition-all"
+        >
+          <ArrowLeft className="w-4 h-4" /> Voltar para Atividades
+        </Link>
+      </div>
+    );
+  }
+
+  const activeEnrollments = activity._count.enrollments;
+  const spotsLeft = Math.max(0, activity.capacity - activeEnrollments);
+  const isFull = spotsLeft === 0;
+  const isCreator = user?.id === activity.createdById;
+
+  const pageBody = (
+    <div className={`${!isAuthenticated ? 'max-w-5xl mx-auto px-4 sm:px-6 py-10' : 'space-y-6'}`}>
+      
+      {!isAuthenticated && (
+        <Link
+          to="/activities"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white mb-6 transition-colors uppercase tracking-wider"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Voltar para Atividades
+        </Link>
+      )}
+
+      {actionError && (
+        <div className="mb-6 p-4 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-xl text-xs flex items-start gap-2.5">
+          <AlertCircle className="w-4.5 h-4.5 shrink-0 mt-0.5" />
+          <span>{actionError}</span>
+        </div>
+      )}
+
+      
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        
+        <div className="lg:col-span-2 space-y-6">
+          <Card
+            variant="default"
+            title={activity.title}
+            subtitle={`Organizador: ${activity.creator.name} (${activity.creator.email})`}
+          >
+            <div className="space-y-2">
+              <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1.5 select-none">
+                <Info className="w-4 h-4 text-emerald-400" />
+                Descrição da Atividade
+              </h2>
+              <p className="text-slate-700 dark:text-slate-300 text-sm leading-relaxed whitespace-pre-line font-sans">
+                {activity.description}
+              </p>
+            </div>
+          </Card>
+        </div>
+
+        
+        <div className="space-y-6">
+          <Card variant="glow" title="Informações Gerais">
+            <div className="space-y-5">
+              <div className="flex gap-3 text-xs">
+                <Calendar className="w-5 h-5 text-emerald-500 dark:text-emerald-400 shrink-0 mt-0.5" />
+                <div>
+                  <span className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Horário</span>
+                  <span className="text-slate-800 dark:text-slate-200 font-semibold mt-0.5 block capitalize">
+                    {formatDateTime(activity.startsAt)}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex gap-3 text-xs">
+                <MapPin className="w-5 h-5 text-emerald-500 dark:text-emerald-400 shrink-0 mt-0.5" />
+                <div>
+                  <span className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Local</span>
+                  <span className="text-slate-800 dark:text-slate-200 font-semibold mt-0.5 block">
+                    {activity.location}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex gap-3 text-xs">
+                <Users className="w-5 h-5 text-emerald-500 dark:text-emerald-400 shrink-0 mt-0.5" />
+                <div>
+                  <span className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Vagas e Ocupação</span>
+                  <div className="text-slate-800 dark:text-slate-200 font-semibold mt-0.5 flex flex-wrap gap-x-2 gap-y-1 items-center">
+                    <span>{activeEnrollments} de {activity.capacity} inscritos</span>
+                    {isFull ? (
+                      <Badge variant="danger">Esgotado</Badge>
+                    ) : (
+                      <Badge variant="success">{spotsLeft} vagas</Badge>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              
+              <div className="pt-4 border-t border-slate-800/80">
+                {isParticipant && (
+                  <>
+                    {isEnrolled ? (
+                      <div className="space-y-3">
+                        <div className="p-3 bg-emerald-500/5 border border-emerald-500/10 text-emerald-400 text-xs rounded-xl flex items-center gap-2 font-semibold select-none">
+                          <CheckCircle2 className="w-4.5 h-4.5 shrink-0" />
+                          Você está inscrito!
+                        </div>
+                        <Button
+                          variant="danger"
+                          className="w-full text-xs font-semibold py-2.5"
+                          onClick={handleCancelEnrollment}
+                        >
+                          Cancelar Inscrição
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button
+                        variant="primary"
+                        disabled={isFull}
+                        className="w-full text-xs font-semibold py-2.5"
+                        onClick={handleEnroll}
+                      >
+                        {isFull ? 'Sem Vagas' : 'Realizar Inscrição'}
+                      </Button>
+                    )}
+                  </>
+                )}
+
+                {!isAuthenticated && (
+                  <Button
+                    variant="primary"
+                    className="w-full text-xs font-semibold py-2.5"
+                    onClick={() => navigate('/login')}
+                  >
+                    Entrar para se Inscrever
+                  </Button>
+                )}
+
+                {isOrganizer && !isCreator && (
+                  <div className="p-3 bg-slate-950 border border-slate-850 text-slate-500 text-[11px] font-medium rounded-xl flex items-start gap-2.5 leading-relaxed">
+                    <Info className="w-4 h-4 shrink-0 text-slate-500 mt-0.5" />
+                    <span>Conectado como Organizador. Apenas participantes podem realizar inscrições.</span>
+                  </div>
+                )}
+                
+                {isOrganizer && isCreator && (
+                  <div className="p-3 bg-emerald-500/5 border border-emerald-500/10 text-emerald-400 text-[11px] font-semibold rounded-xl flex items-start gap-2.5 leading-relaxed">
+                    <Info className="w-4 h-4 shrink-0 text-emerald-400 mt-0.5" />
+                    <span>Você é o organizador desta banca. Visualize a lista de inscritos abaixo.</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </Card>
+        </div>
+      </div>
+
+      
+      {isOrganizer && isCreator && (
+        <Card
+          variant="default"
+          title={
+            <div className="flex items-center gap-2">
+              <ClipboardList className="w-5 h-5 text-emerald-400" />
+              <span>Participantes Inscritos ({enrollments.length})</span>
+            </div>
+          }
+        >
+          {enrollments.length === 0 ? (
+            <div className="p-8 bg-slate-950 border border-slate-850 rounded-xl text-center text-slate-500 text-xs font-medium">
+              Nenhum aluno se inscreveu nesta atividade ainda.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-850 text-slate-500 text-xs font-bold uppercase tracking-wider">
+                    <th className="pb-3 pl-4">Nome</th>
+                    <th className="pb-3">E-mail</th>
+                    <th className="pb-3 pr-4 text-right">Inscrito em</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-850 text-xs text-slate-200">
+                  {enrollments.map((enroll) => (
+                    <tr key={enroll.id} className="hover:bg-slate-850/30 transition-colors">
+                      <td className="py-3.5 pl-4 font-bold">{enroll.user.name}</td>
+                      <td className="py-3.5 text-slate-400 flex items-center gap-1.5">
+                        <Mail className="w-3.5 h-3.5" />
+                        {enroll.user.email}
+                      </td>
+                      <td className="py-3.5 pr-4 text-right text-slate-400">
+                        {new Date(enroll.createdAt).toLocaleDateString('pt-BR')} {new Date(enroll.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
+      )}
+    </div>
+  );
+
+  if (isAuthenticated) {
+    return <LayoutAutenticado>{pageBody}</LayoutAutenticado>;
+  }
+
+  return (
+    <>
+      <Navbar />
+      {pageBody}
+    </>
+  );
+};
