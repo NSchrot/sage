@@ -4,6 +4,9 @@ exports.activitiesRoutes = activitiesRoutes;
 const zod_1 = require("zod");
 const prisma_1 = require("../lib/prisma");
 const client_1 = require("@prisma/client");
+function isWriteConflict(error) {
+    return typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2034';
+}
 async function activitiesRoutes(fastify) {
     fastify.get('/activities', async (request, reply) => {
         try {
@@ -218,52 +221,75 @@ async function activitiesRoutes(fastify) {
         const { id: activityId } = paramsValidation.data;
         const userId = request.user.sub;
         try {
-            const activity = await prisma_1.prisma.activity.findUnique({
-                where: { id: activityId },
-                include: {
-                    enrollments: {
-                        where: { status: client_1.EnrollmentStatus.ATIVA }
+            for (let attempt = 1; attempt <= 3; attempt++) {
+                try {
+                    const result = await prisma_1.prisma.$transaction(async (tx) => {
+                        await tx.$queryRaw `SELECT id FROM activities WHERE id = ${activityId} FOR UPDATE`;
+                        const activity = await tx.activity.findUnique({
+                            where: { id: activityId },
+                            include: {
+                                enrollments: {
+                                    where: { status: client_1.EnrollmentStatus.ATIVA }
+                                }
+                            }
+                        });
+                        if (!activity) {
+                            return { status: 404, body: { message: 'Atividade não encontrada.' } };
+                        }
+                        if (activity.enrollments.length >= activity.capacity) {
+                            return { status: 400, body: { message: 'Esta atividade não possui vagas disponíveis.' } };
+                        }
+                        const existingEnrollment = await tx.enrollment.findUnique({
+                            where: {
+                                userId_activityId: {
+                                    userId,
+                                    activityId
+                                }
+                            }
+                        });
+                        if (existingEnrollment) {
+                            if (existingEnrollment.status === client_1.EnrollmentStatus.ATIVA) {
+                                return { status: 400, body: { message: 'Você já está inscrito nesta atividade.' } };
+                            }
+                            const updatedEnrollment = await tx.enrollment.update({
+                                where: { id: existingEnrollment.id },
+                                data: { status: client_1.EnrollmentStatus.ATIVA }
+                            });
+                            return {
+                                status: 200,
+                                body: {
+                                    message: 'Inscrição realizada com sucesso.',
+                                    enrollment: updatedEnrollment
+                                }
+                            };
+                        }
+                        const newEnrollment = await tx.enrollment.create({
+                            data: {
+                                userId,
+                                activityId,
+                                status: client_1.EnrollmentStatus.ATIVA
+                            }
+                        });
+                        return {
+                            status: 201,
+                            body: {
+                                message: 'Inscrição realizada com sucesso.',
+                                enrollment: newEnrollment
+                            }
+                        };
+                    }, {
+                        isolationLevel: client_1.Prisma.TransactionIsolationLevel.Serializable
+                    });
+                    return reply.status(result.status).send(result.body);
+                }
+                catch (error) {
+                    if (attempt < 3 && isWriteConflict(error)) {
+                        continue;
                     }
+                    throw error;
                 }
-            });
-            if (!activity) {
-                return reply.status(404).send({ message: 'Atividade não encontrada.' });
             }
-            if (activity.enrollments.length >= activity.capacity) {
-                return reply.status(400).send({ message: 'Esta atividade não possui vagas disponíveis.' });
-            }
-            const existingEnrollment = await prisma_1.prisma.enrollment.findUnique({
-                where: {
-                    userId_activityId: {
-                        userId,
-                        activityId
-                    }
-                }
-            });
-            if (existingEnrollment) {
-                if (existingEnrollment.status === client_1.EnrollmentStatus.ATIVA) {
-                    return reply.status(400).send({ message: 'Você já está inscrito nesta atividade.' });
-                }
-                const updatedEnrollment = await prisma_1.prisma.enrollment.update({
-                    where: { id: existingEnrollment.id },
-                    data: { status: client_1.EnrollmentStatus.ATIVA }
-                });
-                return reply.send({
-                    message: 'Inscrição realizada com sucesso.',
-                    enrollment: updatedEnrollment
-                });
-            }
-            const newEnrollment = await prisma_1.prisma.enrollment.create({
-                data: {
-                    userId,
-                    activityId,
-                    status: client_1.EnrollmentStatus.ATIVA
-                }
-            });
-            return reply.status(201).send({
-                message: 'Inscrição realizada com sucesso.',
-                enrollment: newEnrollment
-            });
+            return reply.status(409).send({ message: 'Não foi possível concluir a inscrição. Tente novamente.' });
         }
         catch (error) {
             fastify.log.error(error);

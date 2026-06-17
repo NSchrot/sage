@@ -10,7 +10,6 @@ export const Register: React.FC = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState<'PARTICIPANTE' | 'ORGANIZADOR'>('PARTICIPANTE');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -24,7 +23,7 @@ export const Register: React.FC = () => {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password, role }),
+        body: JSON.stringify({ name, email, password }),
       });
 
       const data = await response.json();
@@ -93,35 +92,8 @@ export const Register: React.FC = () => {
               icon={<KeyRound className="w-4 h-4" />}
             />
 
-            
-            <div>
-              <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
-                Tipo de Acesso (Perfil)
-              </label>
-              <div className="grid grid-cols-2 gap-2 bg-slate-50 dark:bg-slate-950 p-1.5 rounded-xl border border-slate-200 dark:border-slate-850">
-                <button
-                  type="button"
-                  onClick={() => setRole('PARTICIPANTE')}
-                  className={`py-2 px-3 rounded-lg text-xs font-bold uppercase tracking-wider transition-all border cursor-pointer ${
-                    role === 'PARTICIPANTE'
-                      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 shadow-md'
-                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 border-transparent'
-                  }`}
-                >
-                  Participante
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setRole('ORGANIZADOR')}
-                  className={`py-2 px-3 rounded-lg text-xs font-bold uppercase tracking-wider transition-all border cursor-pointer ${
-                    role === 'ORGANIZADOR'
-                      ? 'bg-violet-500/10 text-violet-650 dark:text-violet-400 border-violet-500/20 shadow-md'
-                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 border-transparent'
-                  }`}
-                >
-                  Organizador
-                </button>
-              </div>
+            <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-xs text-emerald-700 dark:text-emerald-300">
+              Novas contas entram como participantes. A homologação de organizadores é feita por um perfil administrativo.
             </div>
 
             <Button

@@ -14,7 +14,6 @@ async function authRoutes(fastify) {
             name: zod_1.z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
             email: zod_1.z.string().email('E-mail inválido'),
             password: zod_1.z.string().min(6, 'Senha deve ter pelo menos 6 caracteres'),
-            role: zod_1.z.nativeEnum(client_1.UserRole).default(client_1.UserRole.PARTICIPANTE),
         });
         const validation = registerSchema.safeParse(request.body);
         if (!validation.success) {
@@ -23,7 +22,7 @@ async function authRoutes(fastify) {
                 errors: validation.error.flatten().fieldErrors
             });
         }
-        const { name, email, password, role } = validation.data;
+        const { name, email, password } = validation.data;
         try {
             const userExists = await prisma_1.prisma.user.findUnique({
                 where: { email },
@@ -37,7 +36,7 @@ async function authRoutes(fastify) {
                     name,
                     email,
                     passwordHash,
-                    role,
+                    role: client_1.UserRole.PARTICIPANTE,
                 },
             });
             return reply.status(201).send({

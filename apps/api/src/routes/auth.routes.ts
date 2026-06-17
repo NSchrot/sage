@@ -10,7 +10,6 @@ export async function authRoutes(fastify: FastifyInstance) {
       name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
       email: z.string().email('E-mail inválido'),
       password: z.string().min(6, 'Senha deve ter pelo menos 6 caracteres'),
-      role: z.nativeEnum(UserRole).default(UserRole.PARTICIPANTE),
     });
 
     const validation = registerSchema.safeParse(request.body);
@@ -21,7 +20,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       });
     }
 
-    const { name, email, password, role } = validation.data;
+    const { name, email, password } = validation.data;
 
     try {
       const userExists = await prisma.user.findUnique({
@@ -39,7 +38,7 @@ export async function authRoutes(fastify: FastifyInstance) {
           name,
           email,
           passwordHash,
-          role,
+          role: UserRole.PARTICIPANTE,
         },
       });
 
