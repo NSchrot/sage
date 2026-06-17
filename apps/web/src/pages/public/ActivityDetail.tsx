@@ -49,10 +49,12 @@ export const ActivityDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
   const [qrExpiresAt, setQrExpiresAt] = useState<string | null>(null);
   const [qrLoading, setQrLoading] = useState(false);
   const [qrError, setQrError] = useState<string | null>(null);
+  const [bulkCertificateLoading, setBulkCertificateLoading] = useState(false);
 
   const { isAuthenticated, isOrganizer, isParticipant, user, token } = useAuth();
   const navigate = useNavigate();
@@ -157,6 +159,7 @@ export const ActivityDetail: React.FC = () => {
     if (!id || !token) return;
 
     setActionError(null);
+    setActionMessage(null);
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/activities/${id}/enroll`, {
         method: 'POST',
@@ -180,6 +183,7 @@ export const ActivityDetail: React.FC = () => {
     if (!id || !token) return;
 
     setActionError(null);
+    setActionMessage(null);
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/activities/${id}/cancel`, {
         method: 'POST',
@@ -203,6 +207,7 @@ export const ActivityDetail: React.FC = () => {
     if (!token) return;
 
     setActionError(null);
+    setActionMessage(null);
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/enrollments/${enrollment.id}/attendance`, {
         method: 'PATCH',
@@ -228,6 +233,7 @@ export const ActivityDetail: React.FC = () => {
     if (!token) return;
 
     setActionError(null);
+    setActionMessage(null);
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/enrollments/${enrollment.id}/certificate`, {
         method: 'POST',
@@ -242,6 +248,38 @@ export const ActivityDetail: React.FC = () => {
       setEnrollments(prev => prev.map(item => item.id === data.id ? data : item));
     } catch (err: any) {
       setActionError(err.message);
+    }
+  };
+
+  const handleIssueAllCertificates = async () => {
+    if (!id || !token) return;
+
+    setActionError(null);
+    setActionMessage(null);
+    setBulkCertificateLoading(true);
+
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/activities/${id}/certificates`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || 'Erro ao emitir certificados em lote.');
+      }
+
+      if (data.issuedCount === 0) {
+        setActionMessage('Não há certificados pendentes para participantes presentes.');
+        return;
+      }
+
+      setEnrollments(prev => prev.map(item => data.enrollments.find((updated: Enrollment) => updated.id === item.id) ?? item));
+      setActionMessage(`${data.issuedCount} certificado(s) emitido(s) com sucesso.`);
+    } catch (err: any) {
+      setActionError(err.message || 'Erro ao emitir certificados em lote.');
+    } finally {
+      setBulkCertificateLoading(false);
     }
   };
 
@@ -285,6 +323,7 @@ export const ActivityDetail: React.FC = () => {
   const isFull = spotsLeft === 0;
   const isCreator = user?.id === activity.createdById;
   const enrollmentClosed = new Date() > new Date(activity.registrationDeadline);
+  const pendingCertificatesCount = enrollments.filter(enroll => enroll.attendanceConfirmedAt && !enroll.certificateIssuedAt).length;
 
   const pageBody = (
     <div className={`${!isAuthenticated ? 'max-w-5xl mx-auto px-4 sm:px-6 py-10' : 'space-y-6'}`}>
@@ -303,6 +342,13 @@ export const ActivityDetail: React.FC = () => {
         <div className="mb-6 p-4 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-xl text-xs flex items-start gap-2.5">
           <AlertCircle className="w-4.5 h-4.5 shrink-0 mt-0.5" />
           <span>{actionError}</span>
+        </div>
+      )}
+
+      {actionMessage && (
+        <div className="mb-6 p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 dark:text-emerald-400 rounded-xl text-xs flex items-start gap-2.5">
+          <CheckCircle2 className="w-4.5 h-4.5 shrink-0 mt-0.5" />
+          <span>{actionMessage}</span>
         </div>
       )}
 
@@ -500,6 +546,18 @@ export const ActivityDetail: React.FC = () => {
               <ClipboardList className="w-5 h-5 text-emerald-400" />
               <span>Participantes Inscritos ({enrollments.length})</span>
             </div>
+          }
+          actions={
+            <Button
+              variant="primary"
+              size="sm"
+              icon={<Award className="w-3.5 h-3.5" />}
+              loading={bulkCertificateLoading}
+              disabled={pendingCertificatesCount === 0}
+              onClick={handleIssueAllCertificates}
+            >
+              Emitir presentes ({pendingCertificatesCount})
+            </Button>
           }
         >
           {enrollments.length === 0 ? (

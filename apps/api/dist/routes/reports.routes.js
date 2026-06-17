@@ -3,11 +3,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.reportsRoutes = reportsRoutes;
 const client_1 = require("@prisma/client");
 const prisma_1 = require("../lib/prisma");
+const certificates_1 = require("../lib/certificates");
 async function reportsRoutes(fastify) {
     fastify.get('/reports/summary', {
         preHandler: [fastify.onlyRole(client_1.UserRole.ORGANIZADOR)]
     }, async (_request, reply) => {
         try {
+            await (0, certificates_1.autoIssueOverdueCertificates)();
             const [participantsTotal, organizersTotal, certificatesIssuedTotal, attendancesConfirmedTotal, activities] = await Promise.all([
                 prisma_1.prisma.user.count({ where: { role: client_1.UserRole.PARTICIPANTE } }),
                 prisma_1.prisma.user.count({ where: { role: client_1.UserRole.ORGANIZADOR } }),

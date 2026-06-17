@@ -2,13 +2,10 @@ import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma';
 import { Prisma, UserRole, EnrollmentStatus } from '@prisma/client';
+import { autoIssueOverdueCertificates, generateCertificateCode } from '../lib/certificates';
 
 function isWriteConflict(error: unknown) {
   return typeof error === 'object' && error !== null && 'code' in error && (error as { code?: string }).code === 'P2034';
-}
-
-function generateCertificateCode(enrollmentId: string) {
-  return `SAGE-${enrollmentId.slice(0, 8).toUpperCase()}-${Date.now().toString(36).toUpperCase()}`;
 }
 
 function isAttendanceWindowOpen(startsAt: Date, endsAt: Date) {
@@ -432,6 +429,8 @@ export async function activitiesRoutes(fastify: FastifyInstance) {
     const userId = request.user.sub;
 
     try {
+      await autoIssueOverdueCertificates();
+
       const activity = await prisma.activity.findUnique({
         where: { id: activityId }
       });
@@ -518,12 +517,84 @@ export async function activitiesRoutes(fastify: FastifyInstance) {
     }
   });
 
+  fastify.post('/activities/:id/certificates', {
+    preHandler: [fastify.onlyRole(UserRole.ORGANIZADOR)]
+  }, async (request, reply) => {
+    const paramsSchema = z.object({
+      id: z.string().uuid(),
+    });
+
+    const paramsValidation = paramsSchema.safeParse(request.params);
+    if (!paramsValidation.success) {
+      return reply.status(400).send({ message: 'ID de atividade inválido.' });
+    }
+
+    const { id: activityId } = paramsValidation.data;
+    const userId = request.user.sub;
+
+    try {
+      const activity = await prisma.activity.findUnique({
+        where: { id: activityId }
+      });
+
+      if (!activity) {
+        return reply.status(404).send({ message: 'Atividade não encontrada.' });
+      }
+
+      if (activity.createdById !== userId) {
+        return reply.status(403).send({ message: 'Você não tem permissão para emitir certificados desta atividade.' });
+      }
+
+      const pendingEnrollments = await prisma.enrollment.findMany({
+        where: {
+          activityId,
+          status: EnrollmentStatus.ATIVA,
+          attendanceConfirmedAt: { not: null },
+          certificateIssuedAt: null
+        },
+        select: { id: true }
+      });
+
+      if (pendingEnrollments.length === 0) {
+        return reply.send({ issuedCount: 0, enrollments: [] });
+      }
+
+      const issuedAt = new Date();
+      const updatedEnrollments = await prisma.$transaction(
+        pendingEnrollments.map(enrollment =>
+          prisma.enrollment.update({
+            where: { id: enrollment.id },
+            data: {
+              certificateIssuedAt: issuedAt,
+              certificateCode: generateCertificateCode(enrollment.id),
+            },
+            include: {
+              user: {
+                select: { id: true, name: true, email: true }
+              }
+            }
+          })
+        )
+      );
+
+      return reply.send({
+        issuedCount: updatedEnrollments.length,
+        enrollments: updatedEnrollments
+      });
+    } catch (error) {
+      fastify.log.error(error);
+      return reply.status(500).send({ message: 'Erro ao emitir certificados em lote.' });
+    }
+  });
+
   fastify.get('/my-enrollments', {
     preHandler: [fastify.onlyRole(UserRole.PARTICIPANTE)]
   }, async (request, reply) => {
     const userId = request.user.sub;
 
     try {
+      await autoIssueOverdueCertificates();
+
       const enrollments = await prisma.enrollment.findMany({
         where: {
           userId,

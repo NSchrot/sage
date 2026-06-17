@@ -4,11 +4,9 @@ exports.activitiesRoutes = activitiesRoutes;
 const zod_1 = require("zod");
 const prisma_1 = require("../lib/prisma");
 const client_1 = require("@prisma/client");
+const certificates_1 = require("../lib/certificates");
 function isWriteConflict(error) {
     return typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2034';
-}
-function generateCertificateCode(enrollmentId) {
-    return `SAGE-${enrollmentId.slice(0, 8).toUpperCase()}-${Date.now().toString(36).toUpperCase()}`;
 }
 function isAttendanceWindowOpen(startsAt, endsAt) {
     const now = Date.now();
@@ -381,6 +379,7 @@ async function activitiesRoutes(fastify) {
         const { id: activityId } = paramsValidation.data;
         const userId = request.user.sub;
         try {
+            await (0, certificates_1.autoIssueOverdueCertificates)();
             const activity = await prisma_1.prisma.activity.findUnique({
                 where: { id: activityId }
             });
@@ -453,11 +452,69 @@ async function activitiesRoutes(fastify) {
             return reply.status(500).send({ message: 'Erro ao gerar QR Code de presença.' });
         }
     });
+    fastify.post('/activities/:id/certificates', {
+        preHandler: [fastify.onlyRole(client_1.UserRole.ORGANIZADOR)]
+    }, async (request, reply) => {
+        const paramsSchema = zod_1.z.object({
+            id: zod_1.z.string().uuid(),
+        });
+        const paramsValidation = paramsSchema.safeParse(request.params);
+        if (!paramsValidation.success) {
+            return reply.status(400).send({ message: 'ID de atividade inválido.' });
+        }
+        const { id: activityId } = paramsValidation.data;
+        const userId = request.user.sub;
+        try {
+            const activity = await prisma_1.prisma.activity.findUnique({
+                where: { id: activityId }
+            });
+            if (!activity) {
+                return reply.status(404).send({ message: 'Atividade não encontrada.' });
+            }
+            if (activity.createdById !== userId) {
+                return reply.status(403).send({ message: 'Você não tem permissão para emitir certificados desta atividade.' });
+            }
+            const pendingEnrollments = await prisma_1.prisma.enrollment.findMany({
+                where: {
+                    activityId,
+                    status: client_1.EnrollmentStatus.ATIVA,
+                    attendanceConfirmedAt: { not: null },
+                    certificateIssuedAt: null
+                },
+                select: { id: true }
+            });
+            if (pendingEnrollments.length === 0) {
+                return reply.send({ issuedCount: 0, enrollments: [] });
+            }
+            const issuedAt = new Date();
+            const updatedEnrollments = await prisma_1.prisma.$transaction(pendingEnrollments.map(enrollment => prisma_1.prisma.enrollment.update({
+                where: { id: enrollment.id },
+                data: {
+                    certificateIssuedAt: issuedAt,
+                    certificateCode: (0, certificates_1.generateCertificateCode)(enrollment.id),
+                },
+                include: {
+                    user: {
+                        select: { id: true, name: true, email: true }
+                    }
+                }
+            })));
+            return reply.send({
+                issuedCount: updatedEnrollments.length,
+                enrollments: updatedEnrollments
+            });
+        }
+        catch (error) {
+            fastify.log.error(error);
+            return reply.status(500).send({ message: 'Erro ao emitir certificados em lote.' });
+        }
+    });
     fastify.get('/my-enrollments', {
         preHandler: [fastify.onlyRole(client_1.UserRole.PARTICIPANTE)]
     }, async (request, reply) => {
         const userId = request.user.sub;
         try {
+            await (0, certificates_1.autoIssueOverdueCertificates)();
             const enrollments = await prisma_1.prisma.enrollment.findMany({
                 where: {
                     userId,
@@ -631,7 +688,7 @@ async function activitiesRoutes(fastify) {
                 where: { id },
                 data: {
                     certificateIssuedAt: enrollment.certificateIssuedAt ?? new Date(),
-                    certificateCode: enrollment.certificateCode ?? generateCertificateCode(enrollment.id),
+                    certificateCode: enrollment.certificateCode ?? (0, certificates_1.generateCertificateCode)(enrollment.id),
                 },
                 include: {
                     user: {

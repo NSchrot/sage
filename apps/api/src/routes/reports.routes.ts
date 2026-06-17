@@ -1,12 +1,15 @@
 import { FastifyInstance } from 'fastify';
 import { EnrollmentStatus, UserRole } from '@prisma/client';
 import { prisma } from '../lib/prisma';
+import { autoIssueOverdueCertificates } from '../lib/certificates';
 
 export async function reportsRoutes(fastify: FastifyInstance) {
   fastify.get('/reports/summary', {
     preHandler: [fastify.onlyRole(UserRole.ORGANIZADOR)]
   }, async (_request, reply) => {
     try {
+      await autoIssueOverdueCertificates();
+
       const [participantsTotal, organizersTotal, certificatesIssuedTotal, attendancesConfirmedTotal, activities] = await Promise.all([
         prisma.user.count({ where: { role: UserRole.PARTICIPANTE } }),
         prisma.user.count({ where: { role: UserRole.ORGANIZADOR } }),
