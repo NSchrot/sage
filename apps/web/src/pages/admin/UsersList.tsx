@@ -35,7 +35,7 @@ const roleAccents: Record<ManagedUser['role'], string> = {
 };
 
 const rolePanels: Record<ManagedUser['role'], string> = {
-  PARTICIPANTE: 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-900 dark:text-slate-300 dark:border-slate-800',
+  PARTICIPANTE: 'bg-slate-100 text-slate-600 border-slate-250 dark:bg-slate-900 dark:text-slate-300 dark:border-[#1f1f1f]',
   ORGANIZADOR: 'bg-teal-500/10 text-teal-700 border-teal-500/20 dark:text-teal-400',
   ADMINISTRADOR: 'bg-sky-500/10 text-sky-700 border-sky-500/20 dark:text-sky-400',
 };
@@ -200,12 +200,12 @@ export const UsersList: React.FC = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-3 rounded-2xl border border-slate-200 dark:border-slate-850 bg-white dark:bg-[#0c0c0c] overflow-hidden min-w-full sm:min-w-[420px] xl:min-w-[460px]">
-            <div className="p-4 border-r border-slate-200 dark:border-slate-850">
+          <div className="grid grid-cols-3 rounded-2xl border border-slate-250 dark:border-[#1f1f1f] bg-white dark:bg-[#0c0c0c] overflow-hidden min-w-full sm:min-w-[420px] xl:min-w-[460px]">
+            <div className="p-4 border-r border-slate-250 dark:border-[#1f1f1f]">
               <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Usuários</span>
               <span className="block text-2xl font-extrabold text-slate-950 dark:text-white font-mono mt-1">{summary.total}</span>
             </div>
-            <div className="p-4 border-r border-slate-200 dark:border-slate-850">
+            <div className="p-4 border-r border-slate-250 dark:border-[#1f1f1f]">
               <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Equipe</span>
               <span className="block text-2xl font-extrabold text-teal-600 dark:text-teal-400 font-mono mt-1">{summary.organizadores}</span>
             </div>
@@ -229,7 +229,7 @@ export const UsersList: React.FC = () => {
                   className={`min-h-20 text-left rounded-2xl border px-4 py-3 transition-all cursor-pointer ${
                     active
                       ? 'border-teal-500/40 bg-teal-500/10 text-slate-950 dark:text-white shadow-sm'
-                      : 'border-slate-200 dark:border-slate-850 bg-white dark:bg-[#0c0c0c] hover:border-slate-300 dark:hover:border-slate-750 text-slate-600 dark:text-slate-400'
+                      : 'border-slate-250 dark:border-[#1f1f1f] bg-white dark:bg-[#0c0c0c] hover:border-slate-350 dark:hover:border-[#2f2f2f] text-slate-600 dark:text-slate-400'
                   }`}
                 >
                   <span className={`inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider ${active ? 'text-teal-700 dark:text-teal-400' : 'text-slate-400 dark:text-slate-500'}`}>
@@ -293,7 +293,7 @@ export const UsersList: React.FC = () => {
             {filteredUsers.map(u => (
               <article
                 key={u.id}
-                className="relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-850 bg-white dark:bg-[#0c0c0c] hover:border-slate-300 dark:hover:border-slate-750 transition-all"
+                className="relative overflow-hidden rounded-2xl border border-slate-250 dark:border-[#1f1f1f] bg-white dark:bg-[#0c0c0c] hover:border-slate-350 dark:hover:border-[#2f2f2f] transition-all"
               >
                 <div className={`absolute left-0 top-0 h-full w-1 ${roleAccents[u.role]}`} />
 

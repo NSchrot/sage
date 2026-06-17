@@ -1,16 +1,19 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
-  Calendar,
-  ClipboardList,
+  ArrowRight,
   Award,
+  CalendarDays,
+  CheckCircle2,
+  ClipboardCheck,
+  Clock3,
+  FileSpreadsheet,
+  LayoutDashboard,
+  MapPin,
+  QrCode,
   Trophy,
   Users,
-  ArrowRight,
-  TrendingUp,
-  Sparkles,
-  ArrowUpRight
 } from 'lucide-react';
 import { Card } from '../components/common/Card';
 import { Badge } from '../components/common/Badge';
@@ -21,19 +24,45 @@ interface Activity {
   title: string;
   location: string;
   startsAt: string;
+  endsAt?: string;
   createdById: string;
   _count: {
     enrollments: number;
   };
 }
 
+interface Enrollment {
+  id: string;
+  status: 'ATIVA' | 'CANCELADA';
+  attendanceConfirmedAt?: string | null;
+  certificateIssuedAt?: string | null;
+  activity: {
+    id: string;
+    title: string;
+    location: string;
+    startsAt: string;
+    endsAt?: string;
+    creator?: {
+      name: string;
+    };
+  };
+}
+
+interface ReportSummary {
+  activeEnrollmentsTotal: number;
+  attendancesConfirmedTotal: number;
+  certificatesIssuedTotal: number;
+  occupancyRate: number;
+  activitiesTotal: number;
+}
+
 export const Dashboard: React.FC = () => {
   const { user, token, isOrganizer, isParticipant, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
-  const [activitiesCount, setActivitiesCount] = useState(0);
-  const [enrollmentsCount, setEnrollmentsCount] = useState(0);
-  const [recentActivities, setRecentActivities] = useState<Activity[]>([]);
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
+  const [summary, setSummary] = useState<ReportSummary | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -45,299 +74,381 @@ export const Dashboard: React.FC = () => {
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
-        
-        const actRes = await fetch(`${import.meta.env.VITE_API_URL}/activities`);
-        if (actRes.ok) {
-          const actData = await actRes.json();
-          setActivitiesCount(actData.length);
-          
-          const sorted = [...actData]
-            .filter((act: any) => new Date(act.startsAt) > new Date())
-            .slice(0, 3);
-          setRecentActivities(sorted);
+
+        const activityRes = await fetch(`${import.meta.env.VITE_API_URL}/activities`);
+        if (activityRes.ok) {
+          const activityData = await activityRes.json();
+          setActivities(activityData);
         }
 
         if (isParticipant && token) {
           const enrollRes = await fetch(`${import.meta.env.VITE_API_URL}/my-enrollments`, {
             headers: { Authorization: `Bearer ${token}` }
           });
+
           if (enrollRes.ok) {
             const enrollData = await enrollRes.json();
-            const activeOnly = enrollData.filter((e: any) => e.status === 'ATIVA');
-            setEnrollmentsCount(activeOnly.length);
+            setEnrollments(enrollData);
           }
         }
-      } catch (error) {
-        console.error('Erro ao buscar dados do dashboard:', error);
+
+        if (isOrganizer && token) {
+          const summaryRes = await fetch(`${import.meta.env.VITE_API_URL}/reports/summary`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+
+          if (summaryRes.ok) {
+            const summaryData = await summaryRes.json();
+            setSummary(summaryData);
+          }
+        }
       } finally {
         setLoading(false);
       }
     };
 
     fetchDashboardData();
-  }, [token, isAuthenticated, isParticipant]);
+  }, [token, isAuthenticated, isParticipant, isOrganizer, navigate]);
 
-  const formatDate = (dateString: string) => {
+  const formatShortDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('pt-BR', {
       day: '2-digit',
-      month: '2-digit',
+      month: 'short',
       hour: '2-digit',
       minute: '2-digit'
     });
   };
 
-  return (
-    <div className="space-y-8 font-sans">
-      
-      <div className="bg-white dark:bg-[#0c0c0c] border border-slate-200 dark:border-[#1f1f1f] rounded-2xl p-6 sm:p-8 relative overflow-hidden shadow-sm dark:shadow-none">
-        <div className="absolute -top-24 -right-24 w-48 h-48 bg-emerald-600/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="relative space-y-2">
-          <div className="inline-flex items-center gap-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider select-none">
-            <Sparkles className="w-3 h-3 animate-pulse" />
-            <span>Ambiente IFPR Ativo</span>
-          </div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight font-outfit">
-            Olá, {user?.name}!
-          </h2>
-          <p className="text-slate-600 dark:text-slate-400 text-sm max-w-xl leading-relaxed">
-            Seja bem-vindo ao portal da SITEC. Aqui está uma visão geral do seu progresso acadêmico e das atividades disponíveis.
-          </p>
-        </div>
-      </div>
+  const formatFullDate = (dateString: string) => {
+    return new Date(dateString).toLocaleString('pt-BR', {
+      weekday: 'long',
+      day: '2-digit',
+      month: 'long',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
 
-      
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        
-        <Card variant="default" className="flex flex-col justify-between">
-          <div className="flex items-start justify-between">
-            <div className="space-y-1">
-              <span className="text-xs font-semibold text-slate-500 dark:text-slate-500 uppercase tracking-wider block">Atividades</span>
-              <span className="text-3xl font-extrabold text-slate-900 dark:text-white block tracking-tight font-mono">
-                {loading ? '...' : activitiesCount}
+  const currentDate = new Date().toLocaleDateString('pt-BR', {
+    weekday: 'long',
+    day: '2-digit',
+    month: 'long'
+  });
+
+  const isAdmin = user?.role === 'ADMINISTRADOR';
+  const activeEnrollments = useMemo(() => enrollments.filter(enrollment => enrollment.status === 'ATIVA'), [enrollments]);
+  const confirmedAttendances = activeEnrollments.filter(enrollment => enrollment.attendanceConfirmedAt).length;
+  const issuedCertificates = activeEnrollments.filter(enrollment => enrollment.certificateIssuedAt).length;
+
+  const upcomingActivities = useMemo(() => {
+    const now = Date.now();
+    return activities
+      .filter(activity => new Date(activity.startsAt).getTime() >= now)
+      .sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime())
+      .slice(0, 5);
+  }, [activities]);
+
+  const upcomingEnrollments = useMemo(() => {
+    const now = Date.now();
+    return activeEnrollments
+      .filter(enrollment => new Date(enrollment.activity.startsAt).getTime() >= now)
+      .sort((a, b) => new Date(a.activity.startsAt).getTime() - new Date(b.activity.startsAt).getTime());
+  }, [activeEnrollments]);
+
+  const managedActivities = useMemo(() => {
+    if (!isOrganizer) return [];
+    if (isAdmin) return activities;
+    return activities.filter(activity => activity.createdById === user?.id);
+  }, [activities, isAdmin, isOrganizer, user?.id]);
+
+  const managedUpcomingActivities = useMemo(() => {
+    const now = Date.now();
+    return managedActivities
+      .filter(activity => new Date(activity.startsAt).getTime() >= now)
+      .sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime());
+  }, [managedActivities]);
+
+  const nextFocus = isParticipant
+    ? upcomingEnrollments[0]?.activity
+    : managedUpcomingActivities[0] ?? upcomingActivities[0];
+
+  const roleLabel = isAdmin ? 'Administração' : isOrganizer ? 'Organização' : 'Participação';
+  const managedEnrollmentCount = managedActivities.reduce((total, activity) => total + (activity._count?.enrollments ?? 0), 0);
+
+  const metricCards = isOrganizer
+    ? [
+        {
+          label: isAdmin ? 'Atividades publicadas' : 'Suas atividades',
+          value: isAdmin ? summary?.activitiesTotal ?? activities.length : managedActivities.length,
+          detail: `${managedUpcomingActivities.length} próximas`,
+          icon: <CalendarDays className="w-4 h-4" />,
+          className: 'border-teal-500/20 bg-teal-500/[0.04] text-teal-700 dark:text-teal-400',
+        },
+        {
+          label: 'Inscrições ativas',
+          value: isAdmin ? summary?.activeEnrollmentsTotal ?? managedEnrollmentCount : managedEnrollmentCount,
+          detail: `${summary?.occupancyRate ?? 0}% de ocupação geral`,
+          icon: <Users className="w-4 h-4" />,
+          className: 'border-sky-500/20 bg-sky-500/[0.04] text-sky-700 dark:text-sky-400',
+        },
+        {
+          label: 'Presenças',
+          value: summary?.attendancesConfirmedTotal ?? 0,
+          detail: 'confirmadas no evento',
+          icon: <ClipboardCheck className="w-4 h-4" />,
+          className: 'border-emerald-500/20 bg-emerald-500/[0.04] text-emerald-700 dark:text-emerald-400',
+        },
+        {
+          label: 'Certificados',
+          value: summary?.certificatesIssuedTotal ?? 0,
+          detail: 'emitidos até agora',
+          icon: <Award className="w-4 h-4" />,
+          className: 'border-amber-500/20 bg-amber-500/[0.04] text-amber-700 dark:text-amber-400',
+        },
+      ]
+    : [
+        {
+          label: 'Inscrições ativas',
+          value: activeEnrollments.length,
+          detail: `${upcomingEnrollments.length} próximas`,
+          icon: <ClipboardCheck className="w-4 h-4" />,
+          className: 'border-teal-500/20 bg-teal-500/[0.04] text-teal-700 dark:text-teal-400',
+        },
+        {
+          label: 'Presenças',
+          value: confirmedAttendances,
+          detail: 'confirmadas por QR ou banca',
+          icon: <CheckCircle2 className="w-4 h-4" />,
+          className: 'border-emerald-500/20 bg-emerald-500/[0.04] text-emerald-700 dark:text-emerald-400',
+        },
+        {
+          label: 'Certificados',
+          value: issuedCertificates,
+          detail: 'disponíveis para imprimir',
+          icon: <Award className="w-4 h-4" />,
+          className: 'border-amber-500/20 bg-amber-500/[0.04] text-amber-700 dark:text-amber-400',
+        },
+        {
+          label: 'Programação',
+          value: activities.length,
+          detail: 'atividades publicadas',
+          icon: <CalendarDays className="w-4 h-4" />,
+          className: 'border-sky-500/20 bg-sky-500/[0.04] text-sky-700 dark:text-sky-400',
+        },
+      ];
+
+  const quickActions = isOrganizer
+    ? [
+        {
+          title: 'Cadastrar atividade',
+          text: 'Publicar oficina, banca ou palestra',
+          to: '/admin/activities/new',
+          icon: <CalendarDays className="w-4 h-4" />,
+        },
+        {
+          title: 'Abrir presença por QR',
+          text: 'Entrar na atividade e exibir o código',
+          to: '/admin/activities',
+          icon: <QrCode className="w-4 h-4" />,
+        },
+        {
+          title: 'Relatórios',
+          text: 'Acompanhar adesão e certificados',
+          to: '/admin/reports',
+          icon: <FileSpreadsheet className="w-4 h-4" />,
+        },
+        {
+          title: 'Torneios',
+          text: 'Organizar chaves e partidas',
+          to: '/admin/tournaments',
+          icon: <Trophy className="w-4 h-4" />,
+        },
+      ]
+    : [
+        {
+          title: 'Explorar programação',
+          text: 'Encontrar atividades abertas',
+          to: '/activities',
+          icon: <CalendarDays className="w-4 h-4" />,
+        },
+        {
+          title: 'Minhas inscrições',
+          text: 'Ver vagas e presença',
+          to: '/my-enrollments',
+          icon: <ClipboardCheck className="w-4 h-4" />,
+        },
+        {
+          title: 'Certificados',
+          text: 'Imprimir documentos emitidos',
+          to: '/certificates',
+          icon: <Award className="w-4 h-4" />,
+        },
+      ];
+
+  return (
+    <div className="space-y-7">
+      <section className="rounded-2xl border border-slate-250 dark:border-[#1f1f1f] bg-white dark:bg-[#0c0c0c] overflow-hidden">
+        <div className="p-6 sm:p-7 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5">
+          <div className="space-y-3 max-w-2xl">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant={isOrganizer ? 'info' : 'success'}>{roleLabel}</Badge>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 capitalize">
+                {currentDate}
               </span>
             </div>
-            <div className="bg-slate-100 dark:bg-slate-950 p-2.5 rounded-xl border border-slate-200 dark:border-slate-850 text-slate-500 dark:text-slate-400">
-              <Calendar className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+
+            <div className="space-y-2">
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-950 dark:text-white tracking-tight font-outfit">
+                Olá, {user?.name}
+              </h1>
+              <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                {isOrganizer
+                  ? 'Acompanhe a operação da SITEC, revise presença, certificados e próximas atividades sob responsabilidade da equipe.'
+                  : 'Veja sua próxima atividade, acompanhe presença e acesse os certificados emitidos pelo portal.'}
+              </p>
             </div>
           </div>
-          <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-900 flex items-center justify-between text-xs text-slate-600 dark:text-slate-400">
-            <span className="flex items-center gap-1">
-              <TrendingUp className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" /> Ativas no Câmpus
+
+          <Link to={isOrganizer ? '/admin/activities' : '/activities'}>
+            <Button variant="primary" icon={<ArrowRight className="w-4 h-4" />}>
+              {isOrganizer ? 'Ver gestão' : 'Ver programação'}
+            </Button>
+          </Link>
+        </div>
+      </section>
+
+      <section className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+        {metricCards.map(metric => (
+          <div key={metric.label} className={`rounded-xl border p-3.5 ${metric.className}`}>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[10px] font-bold uppercase tracking-wider opacity-80">{metric.label}</span>
+              {metric.icon}
+            </div>
+            <span className="block text-2xl font-extrabold font-mono mt-2 text-slate-950 dark:text-white">
+              {loading ? '...' : metric.value}
             </span>
-            <Link to="/activities" className="text-emerald-600 dark:text-emerald-400 font-semibold hover:underline flex items-center gap-0.5">
-              Ver <ArrowUpRight className="w-3 h-3" />
+            <span className="block text-[11px] text-slate-500 dark:text-slate-450 mt-1">{metric.detail}</span>
+          </div>
+        ))}
+      </section>
+
+      <section className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_340px] gap-6">
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2">
+            <div>
+              <h2 className="text-lg font-extrabold text-slate-950 dark:text-white font-outfit">Agenda próxima</h2>
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                {isOrganizer ? 'Atividades que exigem acompanhamento da equipe.' : 'Atividades abertas e oportunidades de participação.'}
+              </p>
+            </div>
+            <Link to="/activities" className="text-xs font-bold text-teal-600 dark:text-teal-400 hover:underline inline-flex items-center gap-1">
+              Programação completa <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
-        </Card>
 
-        
-        <Card variant="default" className="flex flex-col justify-between">
-          <div className="flex items-start justify-between">
-            <div className="space-y-1">
-              <span className="text-xs font-semibold text-slate-500 dark:text-slate-500 uppercase tracking-wider block">Minhas Inscrições</span>
-              <span className="text-3xl font-extrabold text-slate-900 dark:text-white block tracking-tight font-mono">
-                {loading ? '...' : isParticipant ? enrollmentsCount : 'N/A'}
-              </span>
-            </div>
-            <div className="bg-slate-100 dark:bg-slate-950 p-2.5 rounded-xl border border-slate-200 dark:border-slate-850 text-slate-500 dark:text-slate-400">
-              <ClipboardList className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-            </div>
-          </div>
-          <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-900 flex items-center justify-between text-xs text-slate-600 dark:text-slate-400">
-            <span>
-              {isOrganizer ? 'Perfil Organizador' : 'Inscrições confirmadas'}
-            </span>
-            {isParticipant && (
-              <Link to="/my-enrollments" className="text-emerald-600 dark:text-emerald-400 font-semibold hover:underline flex items-center gap-0.5">
-                Ver <ArrowUpRight className="w-3 h-3" />
-              </Link>
-            )}
-          </div>
-        </Card>
-
-        
-        <Card variant="default" className="flex flex-col justify-between">
-          <div className="flex items-start justify-between">
-            <div className="space-y-1">
-              <span className="text-xs font-semibold text-slate-500 dark:text-slate-500 uppercase tracking-wider block">Certificados</span>
-              <span className="text-3xl font-extrabold text-slate-900 dark:text-white block tracking-tight font-mono">
-                {isParticipant ? (enrollmentsCount > 0 ? 1 : 0) : 15}
-              </span>
-            </div>
-            <div className="bg-slate-100 dark:bg-slate-950 p-2.5 rounded-xl border border-slate-200 dark:border-slate-850 text-slate-500 dark:text-slate-400">
-              <Award className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-            </div>
-          </div>
-          <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-900 flex items-center justify-between text-xs text-slate-600 dark:text-slate-400">
-            <span>Assinatura Digital</span>
-            {isParticipant && (
-              <Link to="/certificates" className="text-emerald-600 dark:text-emerald-400 font-semibold hover:underline flex items-center gap-0.5">
-                Ver <ArrowUpRight className="w-3 h-3" />
-              </Link>
-            )}
-          </div>
-        </Card>
-
-        
-        <Card variant="default" className="flex flex-col justify-between">
-          <div className="flex items-start justify-between">
-            <div className="space-y-1">
-              <span className="text-xs font-semibold text-slate-500 dark:text-slate-500 uppercase tracking-wider block">Torneios IFPR</span>
-              <span className="text-3xl font-extrabold text-slate-900 dark:text-white block tracking-tight font-mono">
-                2
-              </span>
-            </div>
-            <div className="bg-slate-100 dark:bg-slate-950 p-2.5 rounded-xl border border-slate-200 dark:border-slate-850 text-slate-500 dark:text-slate-400">
-              <Trophy className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-            </div>
-          </div>
-          <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-900 flex items-center justify-between text-xs text-slate-600 dark:text-slate-400">
-            <span>Competições integradas</span>
-            {isOrganizer && (
-              <Link to="/admin/tournaments" className="text-emerald-600 dark:text-emerald-400 font-semibold hover:underline flex items-center gap-0.5">
-                Gerenciar <ArrowUpRight className="w-3 h-3" />
-              </Link>
-            )}
-          </div>
-        </Card>
-      </div>
-
-      
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        
-        <div className="lg:col-span-2 space-y-4">
-          <h3 className="text-lg font-bold text-slate-900 dark:text-white tracking-wide font-outfit">Próximos Eventos & Oficinas</h3>
-          
           {loading ? (
-            <div className="p-8 bg-white dark:bg-[#0c0c0c] border border-slate-200 dark:border-[#1f1f1f] rounded-2xl flex items-center justify-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-emerald-500" />
+            <div className="rounded-2xl border border-slate-250 dark:border-[#1f1f1f] bg-white dark:bg-[#0c0c0c] p-10 flex items-center justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-teal-500" />
             </div>
-          ) : recentActivities.length === 0 ? (
-            <div className="p-8 bg-white dark:bg-[#0c0c0c] border border-slate-200 dark:border-[#1f1f1f] rounded-2xl text-center text-slate-600 dark:text-slate-400 text-sm">
+          ) : upcomingActivities.length === 0 ? (
+            <div className="rounded-2xl border border-slate-250 dark:border-[#1f1f1f] bg-white dark:bg-[#0c0c0c] p-10 text-center text-sm text-slate-500 dark:text-slate-400">
               Nenhuma atividade agendada para os próximos dias.
             </div>
           ) : (
-            <div className="space-y-4">
-              {recentActivities.map((act) => (
-                <div
-                  key={act.id}
-                  className="bg-white dark:bg-[#0c0c0c] border border-slate-200 dark:border-[#1f1f1f] hover:border-slate-300 dark:hover:border-[#2f2f2f] p-5 rounded-2xl flex flex-col sm:flex-row justify-between sm:items-center gap-4 transition-all shadow-sm dark:shadow-none"
+            <div className="rounded-2xl border border-slate-250 dark:border-[#1f1f1f] bg-white dark:bg-[#0c0c0c] overflow-hidden">
+              {upcomingActivities.map((activity, index) => (
+                <Link
+                  key={activity.id}
+                  to={`/activities/${activity.id}`}
+                  className={`grid gap-4 md:grid-cols-[120px_minmax(0,1fr)_120px] md:items-center px-5 py-4 hover:bg-slate-50 dark:hover:bg-slate-950/70 transition-colors ${
+                    index > 0 ? 'border-t border-slate-200/70 dark:border-[#1f1f1f]' : ''
+                  }`}
                 >
-                  <div className="space-y-1">
-                    <h4 className="text-base font-bold text-slate-900 dark:text-white line-clamp-1">{act.title}</h4>
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
-                      <span className="flex items-center gap-1">
-                        <Calendar className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" /> {formatDate(act.startsAt)}
-                      </span>
-                      <span>Local: <strong className="text-slate-700 dark:text-slate-300">{act.location}</strong></span>
-                    </div>
+                  <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                    {formatShortDate(activity.startsAt)}
                   </div>
-                  
-                  <div className="flex items-center justify-between sm:justify-end gap-3.5">
-                    <span className="text-xs text-slate-600 dark:text-slate-400 font-semibold bg-slate-50 dark:bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-[#1f1f1f]">
-                      {act._count?.enrollments || 0} inscritos
-                    </span>
-                    <Link to={`/activities/${act.id}`}>
-                      <Button variant="ghost" size="sm" className="text-emerald-600 dark:text-emerald-400 border border-slate-200 dark:border-[#1f1f1f] hover:border-slate-300 dark:hover:border-slate-800 bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 dark:hover:bg-slate-900">
-                        Detalhes
-                      </Button>
-                    </Link>
+                  <div className="min-w-0">
+                    <h3 className="text-sm font-extrabold text-slate-950 dark:text-white truncate">{activity.title}</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1.5">
+                      <MapPin className="w-3.5 h-3.5 text-teal-500 shrink-0" />
+                      <span className="truncate">{activity.location}</span>
+                    </p>
                   </div>
-                </div>
+                  <div className="flex md:justify-end">
+                    <Badge variant="neutral">{activity._count?.enrollments ?? 0} inscritos</Badge>
+                  </div>
+                </Link>
               ))}
             </div>
           )}
         </div>
 
-        
-        <div className="space-y-4">
-          <h3 className="text-lg font-bold text-slate-900 dark:text-white tracking-wide font-outfit">Atalhos do Portal</h3>
-          <div className="bg-white dark:bg-[#0c0c0c] border border-slate-200 dark:border-[#1f1f1f] rounded-2xl p-5 space-y-4 shadow-sm dark:shadow-none">
-            
-            {isParticipant && (
-              <>
-                <Link
-                  to="/activities"
-                  className="flex items-center justify-between p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-[#1f1f1f] hover:border-slate-300 dark:hover:border-[#2f2f2f] rounded-xl transition-all group cursor-pointer"
-                >
-                  <div className="flex items-center gap-3">
-                    <Calendar className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-                    <div className="text-left">
-                      <span className="block text-sm font-bold text-slate-800 dark:text-white">Inscrever-se</span>
-                      <span className="block text-[11px] text-slate-500">Explorar atividades abertas</span>
-                    </div>
-                  </div>
-                  <ArrowRight className="w-4 h-4 text-slate-500 group-hover:text-emerald-500 dark:group-hover:text-emerald-400 group-hover:translate-x-0.5 transition-all" />
-                </Link>
-
-                <Link
-                  to="/my-enrollments"
-                  className="flex items-center justify-between p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-[#1f1f1f] hover:border-slate-300 dark:hover:border-[#2f2f2f] rounded-xl transition-all group cursor-pointer"
-                >
-                  <div className="flex items-center gap-3">
-                    <ClipboardList className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-                    <div className="text-left">
-                      <span className="block text-sm font-bold text-slate-800 dark:text-white">Minhas Vagas</span>
-                      <span className="block text-[11px] text-slate-500">Verificar status de inscrições</span>
-                    </div>
-                  </div>
-                  <ArrowRight className="w-4 h-4 text-slate-500 group-hover:text-emerald-500 dark:group-hover:text-emerald-400 group-hover:translate-x-0.5 transition-all" />
-                </Link>
-              </>
+        <div className="space-y-5">
+          <Card
+            variant="glow"
+            title={
+              <div className="flex items-center gap-2">
+                <Clock3 className="w-5 h-5 text-teal-500" />
+                <span>Próximo foco</span>
+              </div>
+            }
+          >
+            {nextFocus ? (
+              <div className="space-y-3">
+                <h2 className="text-lg font-extrabold text-slate-950 dark:text-white leading-tight">
+                  {nextFocus.title}
+                </h2>
+                <div className="space-y-2 text-xs text-slate-600 dark:text-slate-400">
+                  <span className="flex items-center gap-2">
+                    <CalendarDays className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
+                    {formatFullDate(nextFocus.startsAt)}
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
+                    {nextFocus.location}
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+                Nenhuma atividade futura vinculada ao seu perfil no momento.
+              </p>
             )}
+          </Card>
 
-            {isOrganizer && (
-              <>
+          <Card
+            variant="default"
+            title={
+              <div className="flex items-center gap-2">
+                <LayoutDashboard className="w-5 h-5 text-teal-500" />
+                <span>Ações rápidas</span>
+              </div>
+            }
+            subtitle={isOrganizer ? 'Rotina da organização' : 'Seu caminho no evento'}
+          >
+            <div className="space-y-2.5">
+              {quickActions.map(action => (
                 <Link
-                  to="/admin/activities/new"
-                  className="flex items-center justify-between p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-[#1f1f1f] hover:border-slate-300 dark:hover:border-[#2f2f2f] rounded-xl transition-all group cursor-pointer"
+                  key={action.to}
+                  to={action.to}
+                  className="group flex items-center justify-between gap-3 rounded-xl border border-slate-250 dark:border-[#1f1f1f] bg-slate-50 dark:bg-slate-950 hover:border-teal-500/30 dark:hover:border-teal-500/30 px-4 py-3 transition-all"
                 >
-                  <div className="flex items-center gap-3">
-                    <Calendar className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-                    <div className="text-left">
-                      <span className="block text-sm font-bold text-slate-800 dark:text-white">Criar Atividade</span>
-                      <span className="block text-[11px] text-slate-500">Cadastrar palestra ou oficina</span>
-                    </div>
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="w-9 h-9 rounded-xl bg-white dark:bg-[#0c0c0c] border border-slate-250 dark:border-[#1f1f1f] flex items-center justify-center text-teal-600 dark:text-teal-400 shrink-0">
+                      {action.icon}
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-sm font-bold text-slate-900 dark:text-white truncate">{action.title}</span>
+                      <span className="block text-[11px] text-slate-500 dark:text-slate-450 truncate">{action.text}</span>
+                    </span>
                   </div>
-                  <ArrowRight className="w-4 h-4 text-slate-500 group-hover:text-emerald-500 dark:group-hover:text-emerald-400 group-hover:translate-x-0.5 transition-all" />
+                  <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-teal-500 group-hover:translate-x-0.5 transition-all shrink-0" />
                 </Link>
-
-                <Link
-                  to="/admin/tournaments"
-                  className="flex items-center justify-between p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-[#1f1f1f] hover:border-slate-300 dark:hover:border-[#2f2f2f] rounded-xl transition-all group cursor-pointer"
-                >
-                  <div className="flex items-center gap-3">
-                    <Trophy className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-                    <div className="text-left">
-                      <span className="block text-sm font-bold text-slate-800 dark:text-white">Chaves de Torneio</span>
-                      <span className="block text-[11px] text-slate-500">Configurar partidas e chaves</span>
-                    </div>
-                  </div>
-                  <ArrowRight className="w-4 h-4 text-slate-500 group-hover:text-emerald-500 dark:group-hover:text-emerald-400 group-hover:translate-x-0.5 transition-all" />
-                </Link>
-
-                <Link
-                  to="/admin/reports"
-                  className="flex items-center justify-between p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-[#1f1f1f] hover:border-slate-300 dark:hover:border-[#2f2f2f] rounded-xl transition-all group cursor-pointer"
-                >
-                  <div className="flex items-center gap-3">
-                    <Users className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-                    <div className="text-left">
-                      <span className="block text-sm font-bold text-slate-800 dark:text-white">Exportar Relatórios</span>
-                      <span className="block text-[11px] text-slate-500">Planilhas e dados analíticos</span>
-                    </div>
-                  </div>
-                  <ArrowRight className="w-4 h-4 text-slate-500 group-hover:text-emerald-500 dark:group-hover:text-emerald-400 group-hover:translate-x-0.5 transition-all" />
-                </Link>
-              </>
-            )}
-            
-          </div>
+              ))}
+            </div>
+          </Card>
         </div>
-
-      </div>
-
+      </section>
     </div>
   );
 };
