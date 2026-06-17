@@ -50,6 +50,23 @@ const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return <>{children}</>;
 };
 
+const AdminOnlyRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { isAuthenticated, isAdmin, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-slate-950">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-emerald-500"></div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (!isAdmin) return <Navigate to="/dashboard" replace />;
+
+  return <>{children}</>;
+};
+
 const ParticipantRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, isParticipant, loading } = useAuth();
 
@@ -145,11 +162,11 @@ export const App: React.FC = () => {
           <Route
             path="/admin/users"
             element={
-              <AdminRoute>
+              <AdminOnlyRoute>
                 <LayoutAutenticado>
                   <UsersList />
                 </LayoutAutenticado>
-              </AdminRoute>
+              </AdminOnlyRoute>
             }
           />
           <Route

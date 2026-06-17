@@ -114,13 +114,15 @@ export const LayoutAutenticado: React.FC<{ children: React.ReactNode }> = ({ chi
               active={isActive('/admin/activities') || location.pathname.startsWith('/admin/activities/')}
               onClick={onLinkClick}
             />
-            <SidebarLink
-              to="/admin/users"
-              icon={<Users className="w-4.5 h-4.5" />}
-              label="Gestão de Usuários"
-              active={isActive('/admin/users')}
-              onClick={onLinkClick}
-            />
+            {isAdmin && (
+              <SidebarLink
+                to="/admin/users"
+                icon={<Users className="w-4.5 h-4.5" />}
+                label="Gestão de Usuários"
+                active={isActive('/admin/users')}
+                onClick={onLinkClick}
+              />
+            )}
             <SidebarLink
               to="/admin/tournaments"
               icon={<Trophy className="w-4.5 h-4.5" />}

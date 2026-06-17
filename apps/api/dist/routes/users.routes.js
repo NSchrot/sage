@@ -6,7 +6,7 @@ const prisma_1 = require("../lib/prisma");
 const client_1 = require("@prisma/client");
 async function usersRoutes(fastify) {
     fastify.get('/users', {
-        preHandler: [fastify.onlyRole(client_1.UserRole.ORGANIZADOR)]
+        preHandler: [fastify.onlyRole(client_1.UserRole.ADMINISTRADOR)]
     }, async (_request, reply) => {
         try {
             const users = await prisma_1.prisma.user.findMany({
@@ -72,7 +72,7 @@ async function usersRoutes(fastify) {
         }
     });
     fastify.delete('/users/:id', {
-        preHandler: [fastify.onlyRole(client_1.UserRole.ORGANIZADOR)]
+        preHandler: [fastify.onlyRole(client_1.UserRole.ADMINISTRADOR)]
     }, async (request, reply) => {
         const paramsSchema = zod_1.z.object({
             id: zod_1.z.string().uuid(),

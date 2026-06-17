@@ -5,7 +5,7 @@ import { UserRole } from '@prisma/client';
 
 export async function usersRoutes(fastify: FastifyInstance) {
   fastify.get('/users', {
-    preHandler: [fastify.onlyRole(UserRole.ORGANIZADOR)]
+    preHandler: [fastify.onlyRole(UserRole.ADMINISTRADOR)]
   }, async (_request, reply) => {
     try {
       const users = await prisma.user.findMany({
@@ -79,7 +79,7 @@ export async function usersRoutes(fastify: FastifyInstance) {
   });
 
   fastify.delete('/users/:id', {
-    preHandler: [fastify.onlyRole(UserRole.ORGANIZADOR)]
+    preHandler: [fastify.onlyRole(UserRole.ADMINISTRADOR)]
   }, async (request, reply) => {
     const paramsSchema = z.object({
       id: z.string().uuid(),
