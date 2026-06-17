@@ -27,7 +27,7 @@ export async function usersRoutes(fastify: FastifyInstance) {
   });
 
   fastify.patch('/users/:id/role', {
-    preHandler: [fastify.onlyRole(UserRole.ORGANIZADOR)]
+    preHandler: [fastify.onlyRole(UserRole.ADMINISTRADOR)]
   }, async (request, reply) => {
     const paramsSchema = z.object({
       id: z.string().uuid(),

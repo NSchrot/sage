@@ -73,7 +73,6 @@ export const App: React.FC = () => {
       <AuthProvider>
         <BrowserRouter>
         <Routes>
-          
           <Route path="/" element={<Homepage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
@@ -81,7 +80,6 @@ export const App: React.FC = () => {
           <Route path="/activities" element={<ActivitiesList />} />
           <Route path="/activities/:id" element={<ActivityDetail />} />
 
-          
           <Route
             path="/dashboard"
             element={
@@ -93,7 +91,6 @@ export const App: React.FC = () => {
             }
           />
 
-          
           <Route
             path="/my-enrollments"
             element={
@@ -115,7 +112,6 @@ export const App: React.FC = () => {
             }
           />
 
-          
           <Route
             path="/admin/activities"
             element={
@@ -187,7 +183,6 @@ export const App: React.FC = () => {
             }
           />
 
-          
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>

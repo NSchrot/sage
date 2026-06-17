@@ -10,7 +10,7 @@ interface ManagedUser {
   id: string;
   name: string;
   email: string;
-  role: 'PARTICIPANTE' | 'ORGANIZADOR';
+  role: 'PARTICIPANTE' | 'ORGANIZADOR' | 'ADMINISTRADOR';
   createdAt: string;
 }
 
@@ -21,7 +21,7 @@ export const UsersList: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [busyUserId, setBusyUserId] = useState<string | null>(null);
-  const { token, user: currentUser } = useAuth();
+  const { token, user: currentUser, isAdmin } = useAuth();
 
   const fetchUsers = async () => {
     try {
@@ -53,6 +53,11 @@ export const UsersList: React.FC = () => {
   }, [token]);
 
   const toggleRole = async (managedUser: ManagedUser) => {
+    if (!isAdmin) {
+      setActionError('Apenas administradores podem alterar funções de usuários.');
+      return;
+    }
+
     const newRole = managedUser.role === 'ORGANIZADOR' ? 'PARTICIPANTE' : 'ORGANIZADOR';
     setActionError(null);
     setBusyUserId(managedUser.id);
@@ -119,7 +124,6 @@ export const UsersList: React.FC = () => {
 
   return (
     <div className="space-y-8">
-      
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight font-outfit">Gestão de Usuários</h1>
@@ -190,7 +194,7 @@ export const UsersList: React.FC = () => {
                   </td>
                   <td className="py-4 px-4 text-slate-600 dark:text-slate-400">{u.email}</td>
                   <td className="py-4 px-4">
-                    <Badge variant={u.role === 'ORGANIZADOR' ? 'success' : 'neutral'}>
+                    <Badge variant={u.role === 'ORGANIZADOR' || u.role === 'ADMINISTRADOR' ? 'success' : 'neutral'}>
                       {u.role}
                     </Badge>
                   </td>
@@ -199,16 +203,18 @@ export const UsersList: React.FC = () => {
                   </td>
                   <td className="py-4 pr-6 text-right">
                     <div className="flex items-center justify-end gap-2.5">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        icon={<ShieldCheck className="w-4 h-4" />}
-                        loading={busyUserId === u.id}
-                        onClick={() => toggleRole(u)}
-                        title={u.role === 'ORGANIZADOR' ? 'Rebaixar para Participante' : 'Promover para Organizador'}
-                      >
-                        Alternar Função
-                      </Button>
+                      {isAdmin && u.role !== 'ADMINISTRADOR' && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          icon={<ShieldCheck className="w-4 h-4" />}
+                          loading={busyUserId === u.id}
+                          onClick={() => toggleRole(u)}
+                          title={u.role === 'ORGANIZADOR' ? 'Rebaixar para Participante' : 'Promover para Organizador'}
+                        >
+                          Alternar Função
+                        </Button>
+                      )}
                       <button
                         onClick={() => deleteUser(u)}
                         disabled={busyUserId === u.id || u.id === currentUser?.id}

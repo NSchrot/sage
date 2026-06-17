@@ -46,7 +46,7 @@ const SidebarLink: React.FC<SidebarLinkProps> = ({ to, icon, label, active, onCl
 };
 
 export const LayoutAutenticado: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, isOrganizer, isParticipant, logout } = useAuth();
+  const { user, isOrganizer, isParticipant, isAdmin, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
@@ -65,7 +65,6 @@ export const LayoutAutenticado: React.FC<{ children: React.ReactNode }> = ({ chi
         <span className="block text-[10px] font-bold text-slate-400 dark:text-slate-505 uppercase tracking-wider px-4 mb-2.5">
           Painel Geral
         </span>
-        
         <SidebarLink
           to="/dashboard"
           icon={<LayoutDashboard className="w-4.5 h-4.5" />}
@@ -73,7 +72,6 @@ export const LayoutAutenticado: React.FC<{ children: React.ReactNode }> = ({ chi
           active={isActive('/dashboard')}
           onClick={onLinkClick}
         />
-        
         <SidebarLink
           to="/activities"
           icon={<Calendar className="w-4.5 h-4.5" />}
@@ -153,7 +151,7 @@ export const LayoutAutenticado: React.FC<{ children: React.ReactNode }> = ({ chi
     if (path === '/admin/activities') return 'Gestão de Atividades';
     if (path === '/admin/activities/new') return 'Cadastrar Nova Atividade';
     if (path.startsWith('/admin/activities/edit/')) return 'Editar Atividade';
-    if (path === '/admin/users') return 'Gestão de Usuários';
+    if (path === '/admin/users') return isAdmin ? 'Gestão de Usuários' : 'Consulta de Usuários';
     if (path === '/admin/tournaments') return 'Torneios IFPR';
     if (path === '/admin/reports') return 'Relatórios e Exportações';
     return 'Área Autenticada';
@@ -161,9 +159,7 @@ export const LayoutAutenticado: React.FC<{ children: React.ReactNode }> = ({ chi
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-black text-slate-800 dark:text-slate-100 flex transition-colors duration-300">
-      
       <aside className="hidden lg:flex lg:flex-col lg:w-64 border-r border-slate-200 dark:border-[#121212] bg-white dark:bg-[#0c0c0c] shrink-0">
-        
         <div className="px-6 py-5.5 border-b border-slate-200 dark:border-[#121212] flex items-center gap-3">
           <div className="bg-emerald-600/10 p-2 rounded-xl text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shadow-sm">
             <Calendar className="w-5 h-5" />
@@ -174,12 +170,10 @@ export const LayoutAutenticado: React.FC<{ children: React.ReactNode }> = ({ chi
           </div>
         </div>
 
-        
         <nav className="flex-1 px-4 py-6 overflow-y-auto space-y-7">
           {renderLinks()}
         </nav>
 
-        
         <div className="p-4 border-t border-slate-200 dark:border-[#121212] bg-slate-50/50 dark:bg-[#0c0c0c]/40">
           <button
             onClick={handleLogout}
@@ -191,13 +185,9 @@ export const LayoutAutenticado: React.FC<{ children: React.ReactNode }> = ({ chi
         </div>
       </aside>
 
-      
       {sidebarOpen && (
         <div className="fixed inset-0 z-50 lg:hidden flex">
-          
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
-          
-          
           <aside className="relative flex flex-col w-72 max-w-xs bg-white dark:bg-[#0c0c0c] border-r border-slate-200 dark:border-[#1f1f1f] h-full z-10 animate-slide-in">
             <div className="px-6 py-5 flex items-center justify-between border-b border-slate-200 dark:border-[#1f1f1f]">
               <div className="flex items-center gap-2.5">

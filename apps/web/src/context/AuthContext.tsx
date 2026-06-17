@@ -4,7 +4,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  role: 'PARTICIPANTE' | 'ORGANIZADOR';
+  role: 'PARTICIPANTE' | 'ORGANIZADOR' | 'ADMINISTRADOR';
 }
 
 interface AuthContextType {
@@ -12,6 +12,7 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isOrganizer: boolean;
+  isAdmin: boolean;
   isParticipant: boolean;
   login: (token: string, user: User) => void;
   logout: () => void;
@@ -51,7 +52,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const isAuthenticated = !!token;
-  const isOrganizer = user?.role === 'ORGANIZADOR';
+  const isAdmin = user?.role === 'ADMINISTRADOR';
+  const isOrganizer = user?.role === 'ORGANIZADOR' || isAdmin;
   const isParticipant = user?.role === 'PARTICIPANTE';
 
   return (
@@ -61,6 +63,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         user,
         isAuthenticated,
         isOrganizer,
+        isAdmin,
         isParticipant,
         login,
         logout,

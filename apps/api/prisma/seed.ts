@@ -12,6 +12,15 @@ async function main() {
 
   const passwordHash = await bcrypt.hash('password123', 8);
 
+  const admin = await prisma.user.create({
+    data: {
+      name: 'Administrador SAGE',
+      email: 'admin@sage.com',
+      passwordHash,
+      role: UserRole.ADMINISTRADOR,
+    },
+  });
+
   const organizer = await prisma.user.create({
     data: {
       name: 'Organizador SAGE',
@@ -30,7 +39,7 @@ async function main() {
     },
   });
 
-  console.log('✅ Users created:', { organizer: organizer.email, participant: participant.email });
+  console.log('✅ Users created:', { admin: admin.email, organizer: organizer.email, participant: participant.email });
 
   const now = new Date();
   
