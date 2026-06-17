@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { KeyRound, Mail, AlertCircle, ArrowRight } from 'lucide-react';
 import { Card } from '../../components/common/Card';
@@ -14,6 +14,10 @@ export const Login: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const redirectTo = new URLSearchParams(location.search).get('redirect');
+  const safeRedirect = redirectTo?.startsWith('/') && !redirectTo.startsWith('//') ? redirectTo : '/dashboard';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,7 +38,7 @@ export const Login: React.FC = () => {
       }
 
       login(data.token, data.user);
-      navigate('/dashboard');
+      navigate(safeRedirect);
     } catch (err: any) {
       setError(err.message || 'Erro na conexão com o servidor.');
     } finally {

@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { toDataURL } from 'qrcode';
 import { useAuth } from '../../context/AuthContext';
-import { Calendar, MapPin, Users, ArrowLeft, AlertCircle, CheckCircle2, ClipboardList, Info, Mail, Award } from 'lucide-react';
+import { Calendar, MapPin, Users, ArrowLeft, AlertCircle, CheckCircle2, ClipboardList, Info, Mail, Award, QrCode, RefreshCw } from 'lucide-react';
 import { LayoutAutenticado } from '../../components/layout/LayoutAutenticado';
 import { Navbar } from '../../components/Navbar';
 import { Card } from '../../components/common/Card';
@@ -48,6 +49,10 @@ export const ActivityDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
+  const [qrExpiresAt, setQrExpiresAt] = useState<string | null>(null);
+  const [qrLoading, setQrLoading] = useState(false);
+  const [qrError, setQrError] = useState<string | null>(null);
 
   const { isAuthenticated, isOrganizer, isParticipant, user, token } = useAuth();
   const navigate = useNavigate();
@@ -98,6 +103,51 @@ export const ActivityDetail: React.FC = () => {
   useEffect(() => {
     fetchDetails();
   }, [id, isAuthenticated, isOrganizer, isParticipant, token]);
+
+  const fetchAttendanceQr = async () => {
+    if (!id || !token) return;
+
+    setQrLoading(true);
+    setQrError(null);
+
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/activities/${id}/attendance-token`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || 'Erro ao gerar QR Code.');
+      }
+
+      const confirmUrl = `${window.location.origin}/attendance/confirm?token=${encodeURIComponent(data.token)}`;
+      const dataUrl = await toDataURL(confirmUrl, {
+        width: 240,
+        margin: 1,
+        color: {
+          dark: '#0f172a',
+          light: '#ffffff'
+        }
+      });
+
+      setQrCodeUrl(dataUrl);
+      setQrExpiresAt(data.expiresAt);
+    } catch (err: any) {
+      setQrError(err.message || 'Erro ao gerar QR Code.');
+    } finally {
+      setQrLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!activity || !isAuthenticated || !isOrganizer || user?.id !== activity.createdById) return;
+
+    fetchAttendanceQr();
+    const interval = window.setInterval(fetchAttendanceQr, 45000);
+
+    return () => window.clearInterval(interval);
+  }, [activity?.id, isAuthenticated, isOrganizer, token, user?.id]);
 
   const handleEnroll = async () => {
     if (!isAuthenticated) {
@@ -388,6 +438,56 @@ export const ActivityDetail: React.FC = () => {
               </div>
             </div>
           </Card>
+
+          {isOrganizer && isCreator && (
+            <Card
+              variant="default"
+              title={
+                <div className="flex items-center gap-2">
+                  <QrCode className="w-5 h-5 text-emerald-400" />
+                  <span>QR Code de Presença</span>
+                </div>
+              }
+            >
+              <div className="space-y-4">
+                <div className="rounded-2xl border border-slate-200 dark:border-slate-850 bg-white p-4 flex items-center justify-center min-h-[248px]">
+                  {qrCodeUrl ? (
+                    <img src={qrCodeUrl} alt="QR Code para confirmação de presença" className="w-60 h-60" />
+                  ) : (
+                    <div className="text-xs text-slate-500 dark:text-slate-400">
+                      {qrLoading ? 'Gerando QR Code...' : 'QR Code indisponível'}
+                    </div>
+                  )}
+                </div>
+
+                {qrError ? (
+                  <div className="p-3 bg-rose-500/10 border border-rose-500/20 text-rose-500 dark:text-rose-400 text-xs rounded-xl flex items-start gap-2.5">
+                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                    <span>{qrError}</span>
+                  </div>
+                ) : (
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                    Participantes inscritos escaneiam este código com a câmera do celular para confirmar presença. O QR expira e renova automaticamente a cada minuto.
+                  </p>
+                )}
+
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider font-bold">
+                    {qrExpiresAt ? `Válido até ${new Date(qrExpiresAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}` : 'Aguardando geração'}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    loading={qrLoading}
+                    icon={<RefreshCw className="w-3.5 h-3.5" />}
+                    onClick={fetchAttendanceQr}
+                  >
+                    Renovar
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          )}
         </div>
       </div>
 

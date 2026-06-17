@@ -11,6 +11,13 @@ function generateCertificateCode(enrollmentId: string) {
   return `SAGE-${enrollmentId.slice(0, 8).toUpperCase()}-${Date.now().toString(36).toUpperCase()}`;
 }
 
+function isAttendanceWindowOpen(startsAt: Date, endsAt: Date) {
+  const now = Date.now();
+  const opensAt = startsAt.getTime() - 30 * 60 * 1000;
+  const closesAt = endsAt.getTime() + 30 * 60 * 1000;
+  return now >= opensAt && now <= closesAt;
+}
+
 export async function activitiesRoutes(fastify: FastifyInstance) {
   fastify.get('/activities', async (request, reply) => {
     try {
@@ -463,6 +470,54 @@ export async function activitiesRoutes(fastify: FastifyInstance) {
     }
   });
 
+  fastify.post('/activities/:id/attendance-token', {
+    preHandler: [fastify.onlyRole(UserRole.ORGANIZADOR)]
+  }, async (request, reply) => {
+    const paramsSchema = z.object({
+      id: z.string().uuid(),
+    });
+
+    const paramsValidation = paramsSchema.safeParse(request.params);
+    if (!paramsValidation.success) {
+      return reply.status(400).send({ message: 'ID de atividade inválido.' });
+    }
+
+    const { id: activityId } = paramsValidation.data;
+    const userId = request.user.sub;
+
+    try {
+      const activity = await prisma.activity.findUnique({
+        where: { id: activityId }
+      });
+
+      if (!activity) {
+        return reply.status(404).send({ message: 'Atividade não encontrada.' });
+      }
+
+      if (activity.createdById !== userId) {
+        return reply.status(403).send({ message: 'Você não tem permissão para gerar QR Code desta atividade.' });
+      }
+
+      const expiresInSeconds = 60;
+      const token = fastify.jwt.sign(
+        {
+          type: 'attendance',
+          activityId,
+        },
+        { expiresIn: expiresInSeconds }
+      );
+
+      return reply.send({
+        token,
+        expiresInSeconds,
+        expiresAt: new Date(Date.now() + expiresInSeconds * 1000).toISOString()
+      });
+    } catch (error) {
+      fastify.log.error(error);
+      return reply.status(500).send({ message: 'Erro ao gerar QR Code de presença.' });
+    }
+  });
+
   fastify.get('/my-enrollments', {
     preHandler: [fastify.onlyRole(UserRole.PARTICIPANTE)]
   }, async (request, reply) => {
@@ -491,6 +546,80 @@ export async function activitiesRoutes(fastify: FastifyInstance) {
     } catch (error) {
       fastify.log.error(error);
       return reply.status(500).send({ message: 'Erro ao buscar suas inscrições.' });
+    }
+  });
+
+  fastify.post('/attendance/confirm', {
+    preHandler: [fastify.onlyRole(UserRole.PARTICIPANTE)]
+  }, async (request, reply) => {
+    const bodySchema = z.object({
+      token: z.string().min(1),
+    });
+
+    const bodyValidation = bodySchema.safeParse(request.body);
+    if (!bodyValidation.success) {
+      return reply.status(400).send({
+        message: 'Dados de validação incorretos',
+        errors: bodyValidation.error.flatten().fieldErrors
+      });
+    }
+
+    let payload: { type?: string; activityId?: string };
+
+    try {
+      payload = fastify.jwt.verify(bodyValidation.data.token);
+    } catch (error) {
+      return reply.status(400).send({ message: 'QR Code expirado ou inválido. Solicite um novo código ao organizador.' });
+    }
+
+    if (payload.type !== 'attendance' || !payload.activityId) {
+      return reply.status(400).send({ message: 'QR Code inválido para confirmação de presença.' });
+    }
+
+    const userId = request.user.sub;
+
+    try {
+      const enrollment = await prisma.enrollment.findUnique({
+        where: {
+          userId_activityId: {
+            userId,
+            activityId: payload.activityId
+          }
+        },
+        include: {
+          activity: true
+        }
+      });
+
+      if (!enrollment || enrollment.status !== EnrollmentStatus.ATIVA) {
+        return reply.status(404).send({ message: 'Você não possui inscrição ativa nesta atividade.' });
+      }
+
+      if (!isAttendanceWindowOpen(enrollment.activity.startsAt, enrollment.activity.endsAt)) {
+        return reply.status(400).send({ message: 'A confirmação por QR Code só fica disponível 30 minutos antes até 30 minutos depois da atividade.' });
+      }
+
+      const updatedEnrollment = await prisma.enrollment.update({
+        where: { id: enrollment.id },
+        data: {
+          attendanceConfirmedAt: enrollment.attendanceConfirmedAt ?? new Date(),
+        },
+        include: {
+          activity: {
+            select: {
+              id: true,
+              title: true,
+              startsAt: true,
+              endsAt: true,
+            }
+          }
+        }
+      });
+
+      return reply.send(updatedEnrollment);
+    } catch (error) {
+      fastify.log.error(error);
+      return reply.status(500).send({ message: 'Erro ao confirmar presença por QR Code.' });
     }
   });
 

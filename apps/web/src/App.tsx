@@ -11,6 +11,7 @@ import { ActivityDetail } from './pages/public/ActivityDetail';
 import { Dashboard } from './pages/Dashboard';
 import { MyEnrollments } from './pages/participant/MyEnrollments';
 import { Certificates } from './pages/participant/Certificates';
+import { AttendanceConfirm } from './pages/participant/AttendanceConfirm';
 import { AdminActivities } from './pages/admin/AdminActivities';
 import { CreateActivity } from './pages/admin/CreateActivity';
 import { UsersList } from './pages/admin/UsersList';
@@ -96,6 +97,7 @@ export const App: React.FC = () => {
           <Route path="/recovery" element={<Recovery />} />
           <Route path="/activities" element={<ActivitiesList />} />
           <Route path="/activities/:id" element={<ActivityDetail />} />
+          <Route path="/attendance/confirm" element={<AttendanceConfirm />} />
 
           <Route
             path="/dashboard"
