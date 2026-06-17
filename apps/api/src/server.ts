@@ -5,6 +5,7 @@ import authPlugin from './plugins/auth';
 import { authRoutes } from './routes/auth.routes';
 import { activitiesRoutes } from './routes/activities.routes';
 import { usersRoutes } from './routes/users.routes';
+import { reportsRoutes } from './routes/reports.routes';
 import * as dotenv from 'dotenv';
 
 dotenv.config();
@@ -28,6 +29,7 @@ async function bootstrap() {
   await fastify.register(authRoutes, { prefix: '/auth' });
   await fastify.register(activitiesRoutes);
   await fastify.register(usersRoutes);
+  await fastify.register(reportsRoutes);
 
   const port = Number(process.env.PORT) || 3333;
 

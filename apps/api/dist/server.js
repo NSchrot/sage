@@ -43,6 +43,7 @@ const auth_1 = __importDefault(require("./plugins/auth"));
 const auth_routes_1 = require("./routes/auth.routes");
 const activities_routes_1 = require("./routes/activities.routes");
 const users_routes_1 = require("./routes/users.routes");
+const reports_routes_1 = require("./routes/reports.routes");
 const dotenv = __importStar(require("dotenv"));
 dotenv.config();
 const fastify = (0, fastify_1.default)({
@@ -60,6 +61,7 @@ async function bootstrap() {
     await fastify.register(auth_routes_1.authRoutes, { prefix: '/auth' });
     await fastify.register(activities_routes_1.activitiesRoutes);
     await fastify.register(users_routes_1.usersRoutes);
+    await fastify.register(reports_routes_1.reportsRoutes);
     const port = Number(process.env.PORT) || 3333;
     try {
         await fastify.listen({ port, host: '0.0.0.0' });
