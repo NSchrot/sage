@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
-import { Users, ShieldCheck, User as UserIcon, Trash2, Search, Sparkles } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { AlertCircle, ShieldCheck, User as UserIcon, Trash2, Search } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 import { Card } from '../../components/common/Card';
 import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
 
-interface UserMock {
+interface ManagedUser {
   id: string;
   name: string;
   email: string;
@@ -14,30 +15,101 @@ interface UserMock {
 }
 
 export const UsersList: React.FC = () => {
-  const [users, setUsers] = useState<UserMock[]>([
-    { id: '1', name: 'Organizador SITEC', email: 'organizador@sitec.com', role: 'ORGANIZADOR', createdAt: '2026-06-01' },
-    { id: '2', name: 'Participante SITEC', email: 'participante@sitec.com', role: 'PARTICIPANTE', createdAt: '2026-06-02' },
-    { id: '3', name: 'Ana Beatriz Souza', email: 'ana.souza@ifpr.edu.br', role: 'PARTICIPANTE', createdAt: '2026-06-05' },
-    { id: '4', name: 'Dr. Roberto Carlos Mendes', email: 'roberto.mendes@ifpr.edu.br', role: 'ORGANIZADOR', createdAt: '2026-06-08' },
-    { id: '5', name: 'Felipe Augusto Santos', email: 'felipe.santos@estudante.ifpr.edu.br', role: 'PARTICIPANTE', createdAt: '2026-06-09' },
-  ]);
+  const [users, setUsers] = useState<ManagedUser[]>([]);
   const [search, setSearch] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [busyUserId, setBusyUserId] = useState<string | null>(null);
+  const { token, user: currentUser } = useAuth();
 
-  const toggleRole = (userId: string) => {
-    setUsers(prev =>
-      prev.map(u => {
-        if (u.id === userId) {
-          const newRole = u.role === 'ORGANIZADOR' ? 'PARTICIPANTE' : 'ORGANIZADOR';
-          return { ...u, role: newRole as any };
-        }
-        return u;
-      })
-    );
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/users`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || 'Erro ao carregar usuários.');
+      }
+
+      setUsers(data);
+    } catch (err: any) {
+      setError(err.message || 'Erro ao carregar usuários.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const deleteUser = (userId: string, name: string) => {
-    if (window.confirm(`Tem certeza de que deseja banir o usuário ${name}?`)) {
-      setUsers(prev => prev.filter(u => u.id !== userId));
+  useEffect(() => {
+    if (token) {
+      fetchUsers();
+    }
+  }, [token]);
+
+  const toggleRole = async (managedUser: ManagedUser) => {
+    const newRole = managedUser.role === 'ORGANIZADOR' ? 'PARTICIPANTE' : 'ORGANIZADOR';
+    setActionError(null);
+    setBusyUserId(managedUser.id);
+
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/users/${managedUser.id}/role`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ role: newRole })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || 'Erro ao atualizar perfil.');
+      }
+
+      setUsers(prev => prev.map(u => u.id === data.id ? data : u));
+    } catch (err: any) {
+      setActionError(err.message || 'Erro ao atualizar perfil.');
+    } finally {
+      setBusyUserId(null);
+    }
+  };
+
+  const deleteUser = async (managedUser: ManagedUser) => {
+    if (managedUser.id === currentUser?.id) {
+      setActionError('Você não pode remover a própria conta.');
+      return;
+    }
+
+    if (!window.confirm(`Tem certeza de que deseja remover o usuário ${managedUser.name}?`)) {
+      return;
+    }
+
+    setActionError(null);
+    setBusyUserId(managedUser.id);
+
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/users/${managedUser.id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.message || 'Erro ao remover usuário.');
+      }
+
+      setUsers(prev => prev.filter(u => u.id !== managedUser.id));
+    } catch (err: any) {
+      setActionError(err.message || 'Erro ao remover usuário.');
+    } finally {
+      setBusyUserId(null);
     }
   };
 
@@ -66,7 +138,35 @@ export const UsersList: React.FC = () => {
         </div>
       </div>
 
-      
+      {actionError && (
+        <div className="p-4 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-xl text-xs flex items-start gap-2.5">
+          <AlertCircle className="w-4.5 h-4.5 shrink-0 mt-0.5" />
+          <span>{actionError}</span>
+        </div>
+      )}
+
+      {loading ? (
+        <div className="flex items-center justify-center min-h-[30vh]">
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-teal-500"></div>
+        </div>
+      ) : error ? (
+        <Card variant="default" className="text-center py-10">
+          <AlertCircle className="w-12 h-12 text-rose-500 mx-auto mb-4" />
+          <h3 className="text-base font-bold text-slate-900 dark:text-white">Falha ao carregar usuários</h3>
+          <p className="text-xs text-slate-550 dark:text-slate-400 mt-2">{error}</p>
+          <Button variant="outline" size="sm" onClick={fetchUsers} className="mt-4">
+            Tentar Novamente
+          </Button>
+        </Card>
+      ) : filteredUsers.length === 0 ? (
+        <Card variant="default" className="text-center py-12">
+          <UserIcon className="w-12 h-12 text-slate-400 dark:text-slate-600 mx-auto mb-4" />
+          <h3 className="text-base font-bold text-slate-900 dark:text-white">Nenhum usuário encontrado</h3>
+          <p className="text-xs text-slate-550 dark:text-slate-400 mt-2">
+            {search ? 'Ajuste os termos de busca e tente novamente.' : 'Ainda não há usuários cadastrados.'}
+          </p>
+        </Card>
+      ) : (
       <Card variant="default" className="overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
@@ -103,14 +203,16 @@ export const UsersList: React.FC = () => {
                         variant="outline"
                         size="sm"
                         icon={<ShieldCheck className="w-4 h-4" />}
-                        onClick={() => toggleRole(u.id)}
+                        loading={busyUserId === u.id}
+                        onClick={() => toggleRole(u)}
                         title={u.role === 'ORGANIZADOR' ? 'Rebaixar para Participante' : 'Promover para Organizador'}
                       >
                         Alternar Função
                       </Button>
                       <button
-                        onClick={() => deleteUser(u.id, u.name)}
-                        className="bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 p-2 rounded-xl transition-all border border-rose-500/20"
+                        onClick={() => deleteUser(u)}
+                        disabled={busyUserId === u.id || u.id === currentUser?.id}
+                        className="bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 p-2 rounded-xl transition-all border border-rose-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
                         title="Remover conta"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -123,6 +225,7 @@ export const UsersList: React.FC = () => {
           </table>
         </div>
       </Card>
+      )}
     </div>
   );
 };
