@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { KeyRound, Mail, AlertCircle, ArrowRight, Sparkles } from 'lucide-react';
+import { KeyRound, Mail, AlertCircle, ArrowRight } from 'lucide-react';
 import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
@@ -42,8 +42,10 @@ export const Login: React.FC = () => {
     }
   };
 
-  const handleFillCredentials = (type: 'organizer' | 'participant') => {
-    if (type === 'organizer') {
+  const handleFillCredentials = (type: 'admin' | 'organizer' | 'participant') => {
+    if (type === 'admin') {
+      setEmail('admin@sage.com');
+    } else if (type === 'organizer') {
       setEmail('organizador@sage.com');
     } else {
       setEmail('participante@sage.com');
@@ -118,12 +120,19 @@ export const Login: React.FC = () => {
               </Button>
             </form>
 
-            
             <div className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800/80">
               <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3.5 text-center">
                 Acesso Rápido para Avaliação (TCC)
               </p>
-              <div className="grid grid-cols-2 gap-2.5">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => handleFillCredentials('admin')}
+                  className="bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-850 hover:border-slate-350 dark:hover:border-slate-750 px-3.5 py-2.5 rounded-xl text-[10px] font-bold tracking-wide uppercase transition-all flex flex-col items-center cursor-pointer"
+                >
+                  <span className="text-sky-600 dark:text-sky-400 mb-0.5">Admin</span>
+                  <span className="text-[9px] text-slate-500 font-medium">Acessos & Perfis</span>
+                </button>
                 <button
                   type="button"
                   onClick={() => handleFillCredentials('organizer')}
