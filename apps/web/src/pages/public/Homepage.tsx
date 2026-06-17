@@ -20,12 +20,12 @@ import {
 import { Button } from '../../components/common/Button';
 import { Navbar } from '../../components/Navbar';
 
-const SectionLabel: React.FC<{ number: string; text: string }> = ({ number, text }) => (
-  <div className="flex items-center gap-3 mb-6">
+const SectionLabel: React.FC<{ number: string; text: string; align?: 'left' | 'center' }> = ({ number, text, align = 'left' }) => (
+  <div className={`flex items-center gap-3 mb-6 ${align === 'center' ? 'justify-center' : ''}`}>
     <span className="text-[11px] font-mono font-semibold text-teal-600 dark:text-teal-500 tracking-wider">
       {number}
     </span>
-    <span className="h-px flex-1 max-w-16 bg-neutral-300 dark:bg-[#2a2a2a]" />
+    <span className="h-px w-16 bg-neutral-300 dark:bg-[#2a2a2a]" />
     <span className="text-[10px] font-mono font-medium text-neutral-400 dark:text-neutral-600 uppercase tracking-widest">
       {text}
     </span>
@@ -125,7 +125,7 @@ export const Homepage: React.FC = () => {
               <SectionLabel number="01" text="hero" />
 
               <h1 className="text-7xl sm:text-8xl lg:text-9xl font-bold tracking-tighter text-neutral-900 dark:text-white font-display leading-none">
-                SITEC
+                <span className="typing-logo">SITEC</span>
               </h1>
 
               <h2 className="text-lg sm:text-xl font-medium text-neutral-600 dark:text-neutral-400 tracking-wide max-w-xl mx-auto lg:mx-0">
@@ -219,7 +219,7 @@ export const Homepage: React.FC = () => {
       
       <section className="py-24 md:py-32 border-b border-neutral-200 dark:border-[#1a1a1a]">
         <div className="max-w-4xl mx-auto px-4 text-center space-y-6">
-          <SectionLabel number="02" text="boas-vindas" />
+          <SectionLabel number="02" text="boas-vindas" align="center" />
 
           <div className="space-y-4">
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-neutral-900 dark:text-white font-display tracking-tight leading-tight">
