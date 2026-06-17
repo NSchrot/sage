@@ -18,6 +18,8 @@ interface ReportSummary {
   organizersTotal: number;
   activitiesTotal: number;
   activeEnrollmentsTotal: number;
+  attendancesConfirmedTotal: number;
+  certificatesIssuedTotal: number;
   capacityTotal: number;
   occupancyRate: number;
   activities: ReportActivity[];
@@ -143,8 +145,8 @@ export const Reports: React.FC = () => {
               <Calendar className="w-6 h-6" />
             </div>
             <div>
-              <span className="text-xs text-slate-550 dark:text-slate-500 uppercase font-bold tracking-wider block">Atividades Cadastradas</span>
-              <span className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight font-mono">{summary.activitiesTotal}</span>
+              <span className="text-xs text-slate-550 dark:text-slate-500 uppercase font-bold tracking-wider block">Presenças Homologadas</span>
+              <span className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight font-mono">{summary.attendancesConfirmedTotal}</span>
             </div>
           </div>
         </Card>
@@ -156,8 +158,8 @@ export const Reports: React.FC = () => {
               <TrendingUp className="w-6 h-6" />
             </div>
             <div>
-              <span className="text-xs text-slate-550 dark:text-slate-500 uppercase font-bold tracking-wider block">Ocupação Geral</span>
-              <span className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight font-mono">{summary.occupancyRate}%</span>
+              <span className="text-xs text-slate-550 dark:text-slate-500 uppercase font-bold tracking-wider block">Certificados Emitidos</span>
+              <span className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight font-mono">{summary.certificatesIssuedTotal}</span>
             </div>
           </div>
         </Card>
@@ -200,12 +202,16 @@ export const Reports: React.FC = () => {
               <span className="font-bold text-slate-900 dark:text-white">{summary.activeEnrollmentsTotal}</span>
             </div>
             <div className="flex items-center justify-between p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-850 rounded-xl">
-              <span className="text-slate-550 dark:text-slate-400">Capacidade total</span>
-              <span className="font-bold text-slate-900 dark:text-white">{summary.capacityTotal}</span>
+              <span className="text-slate-550 dark:text-slate-400">Atividades</span>
+              <span className="font-bold text-slate-900 dark:text-white">{summary.activitiesTotal}</span>
             </div>
             <div className="flex items-center justify-between p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-850 rounded-xl">
-              <span className="text-slate-550 dark:text-slate-400">Organizadores</span>
-              <span className="font-bold text-slate-900 dark:text-white">{summary.organizersTotal}</span>
+              <span className="text-slate-550 dark:text-slate-400">Ocupação geral</span>
+              <span className="font-bold text-slate-900 dark:text-white">{summary.occupancyRate}%</span>
+            </div>
+            <div className="flex items-center justify-between p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-850 rounded-xl">
+              <span className="text-slate-550 dark:text-slate-400">Capacidade total</span>
+              <span className="font-bold text-slate-900 dark:text-white">{summary.capacityTotal}</span>
             </div>
           </div>
         </div>

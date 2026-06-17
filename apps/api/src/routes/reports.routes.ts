@@ -7,9 +7,21 @@ export async function reportsRoutes(fastify: FastifyInstance) {
     preHandler: [fastify.onlyRole(UserRole.ORGANIZADOR)]
   }, async (_request, reply) => {
     try {
-      const [participantsTotal, organizersTotal, activities] = await Promise.all([
+      const [participantsTotal, organizersTotal, certificatesIssuedTotal, attendancesConfirmedTotal, activities] = await Promise.all([
         prisma.user.count({ where: { role: UserRole.PARTICIPANTE } }),
         prisma.user.count({ where: { role: UserRole.ORGANIZADOR } }),
+        prisma.enrollment.count({
+          where: {
+            status: EnrollmentStatus.ATIVA,
+            certificateIssuedAt: { not: null }
+          }
+        }),
+        prisma.enrollment.count({
+          where: {
+            status: EnrollmentStatus.ATIVA,
+            attendanceConfirmedAt: { not: null }
+          }
+        }),
         prisma.activity.findMany({
           include: {
             _count: {
@@ -33,6 +45,8 @@ export async function reportsRoutes(fastify: FastifyInstance) {
         organizersTotal,
         activitiesTotal: activities.length,
         activeEnrollmentsTotal,
+        attendancesConfirmedTotal,
+        certificatesIssuedTotal,
         capacityTotal,
         occupancyRate,
         activities: activities.map(activity => ({
