@@ -20,8 +20,8 @@ import {
 import { Button } from '../../components/common/Button';
 import { Navbar } from '../../components/Navbar';
 
-const SectionLabel: React.FC<{ number: string; text: string; align?: 'left' | 'center' }> = ({ number, text, align = 'left' }) => (
-  <div className={`flex items-center gap-3 mb-6 ${align === 'center' ? 'justify-center' : ''}`}>
+const SectionLabel: React.FC<{ number: string; text: string }> = ({ number, text }) => (
+  <div className="flex items-center gap-3 mb-6">
     <span className="text-[11px] font-mono font-semibold text-teal-600 dark:text-teal-500 tracking-wider">
       {number}
     </span>
@@ -218,22 +218,24 @@ export const Homepage: React.FC = () => {
 
       
       <section className="py-24 md:py-32 border-b border-neutral-200 dark:border-[#1a1a1a]">
-        <div className="max-w-4xl mx-auto px-4 text-center space-y-6">
-          <SectionLabel number="02" text="boas-vindas" align="center" />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <SectionLabel number="02" text="boas-vindas" />
 
-          <div className="space-y-4">
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-neutral-900 dark:text-white font-display tracking-tight leading-tight">
-              Um espaço para aprender,
-              <br />
-              <span className="text-teal-600 dark:text-teal-400">criar</span> e <span className="text-teal-600 dark:text-teal-400">compartilhar</span>.
-            </h2>
-            <p className="text-neutral-500 dark:text-neutral-500 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
-              A SITEC foi pensada para reunir conhecimento, tecnologia e participação. Durante o evento, estudantes, professores e convidados compartilham experiências formativas em uma programação construída para aproximar a comunidade acadêmica de diferentes saberes.
-            </p>
-          </div>
+          <div className="max-w-4xl mx-auto text-center space-y-6">
+            <div className="space-y-4">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-neutral-900 dark:text-white font-display tracking-tight leading-tight">
+                Um espaço para aprender,
+                <br />
+                <span className="text-teal-600 dark:text-teal-400">criar</span> e <span className="text-teal-600 dark:text-teal-400">compartilhar</span>.
+              </h2>
+              <p className="text-neutral-500 dark:text-neutral-500 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
+                A SITEC foi pensada para reunir conhecimento, tecnologia e participação. Durante o evento, estudantes, professores e convidados compartilham experiências formativas em uma programação construída para aproximar a comunidade acadêmica de diferentes saberes.
+              </p>
+            </div>
 
-          <div className="flex justify-center pt-2">
-            <div className="h-px w-32 bg-gradient-to-r from-transparent via-teal-500/40 to-transparent" />
+            <div className="flex justify-center pt-2">
+              <div className="h-px w-32 bg-gradient-to-r from-transparent via-teal-500/40 to-transparent" />
+            </div>
           </div>
         </div>
       </section>
@@ -525,29 +527,31 @@ export const Homepage: React.FC = () => {
         <div className="absolute inset-0 bg-teal-500/[0.03] dark:bg-teal-500/[0.02]" />
         <div className="absolute inset-0 dot-grid pointer-events-none opacity-50" />
 
-        <div className="relative max-w-3xl mx-auto px-4 text-center space-y-8">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <SectionLabel number="08" text="participe" />
 
-          <h2 className="text-4xl sm:text-5xl font-bold text-neutral-900 dark:text-white font-display tracking-tight leading-tight">
-            Faça parte da SITEC
-          </h2>
-          <p className="text-neutral-500 dark:text-neutral-500 text-base sm:text-lg max-w-xl mx-auto leading-relaxed">
-            Explore a programação, escolha suas atividades, garanta sua vaga e aproveite a experiência completa do evento.
-          </p>
+          <div className="max-w-3xl mx-auto text-center space-y-8">
+            <h2 className="text-4xl sm:text-5xl font-bold text-neutral-900 dark:text-white font-display tracking-tight leading-tight">
+              Faça parte da SITEC
+            </h2>
+            <p className="text-neutral-500 dark:text-neutral-500 text-base sm:text-lg max-w-xl mx-auto leading-relaxed">
+              Explore a programação, escolha suas atividades, garanta sua vaga e aproveite a experiência completa do evento.
+            </p>
 
-          <div className="flex flex-col sm:flex-row justify-center gap-3 pt-2">
-            <a href="#programacao" onClick={handleScrollToProgram}>
-              <Button variant="primary" size="lg" icon={<ArrowRight className="w-5 h-5" />}>
-                Ver programação
-              </Button>
-            </a>
-            {!isAuthenticated && (
-              <Link to="/register">
-                <Button variant="outline" size="lg">
-                  Fazer inscrição
+            <div className="flex flex-col sm:flex-row justify-center gap-3 pt-2">
+              <a href="#programacao" onClick={handleScrollToProgram}>
+                <Button variant="primary" size="lg" icon={<ArrowRight className="w-5 h-5" />}>
+                  Ver programação
                 </Button>
-              </Link>
-            )}
+              </a>
+              {!isAuthenticated && (
+                <Link to="/register">
+                  <Button variant="outline" size="lg">
+                    Fazer inscrição
+                  </Button>
+                </Link>
+              )}
+            </div>
           </div>
         </div>
       </section>
