@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { AlertCircle, ShieldCheck, User as UserIcon, Trash2, Search } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { AlertCircle, CalendarDays, Crown, GraduationCap, Mail, Search, ShieldCheck, Trash2, User as UserIcon, UserCog, Users } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { Card } from '../../components/common/Card';
 import { Badge } from '../../components/common/Badge';
@@ -14,9 +14,50 @@ interface ManagedUser {
   createdAt: string;
 }
 
+type RoleFilter = 'TODOS' | ManagedUser['role'];
+
+const roleLabels: Record<ManagedUser['role'], string> = {
+  PARTICIPANTE: 'Participante',
+  ORGANIZADOR: 'Organizador',
+  ADMINISTRADOR: 'Administrador',
+};
+
+const roleDescriptions: Record<ManagedUser['role'], string> = {
+  PARTICIPANTE: 'Inscrições e certificados',
+  ORGANIZADOR: 'Atividades e presenças',
+  ADMINISTRADOR: 'Acessos e permissões',
+};
+
+const roleAccents: Record<ManagedUser['role'], string> = {
+  PARTICIPANTE: 'bg-slate-400',
+  ORGANIZADOR: 'bg-teal-500',
+  ADMINISTRADOR: 'bg-sky-500',
+};
+
+const rolePanels: Record<ManagedUser['role'], string> = {
+  PARTICIPANTE: 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-900 dark:text-slate-300 dark:border-slate-800',
+  ORGANIZADOR: 'bg-teal-500/10 text-teal-700 border-teal-500/20 dark:text-teal-400',
+  ADMINISTRADOR: 'bg-sky-500/10 text-sky-700 border-sky-500/20 dark:text-sky-400',
+};
+
+const roleBadgeVariant: Record<ManagedUser['role'], 'success' | 'info' | 'neutral'> = {
+  PARTICIPANTE: 'neutral',
+  ORGANIZADOR: 'success',
+  ADMINISTRADOR: 'info',
+};
+
+const getInitials = (name: string) => name
+  .trim()
+  .split(/\s+/)
+  .slice(0, 2)
+  .map(part => part[0])
+  .join('')
+  .toUpperCase();
+
 export const UsersList: React.FC = () => {
   const [users, setUsers] = useState<ManagedUser[]>([]);
   const [search, setSearch] = useState('');
+  const [roleFilter, setRoleFilter] = useState<RoleFilter>('TODOS');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -118,26 +159,95 @@ export const UsersList: React.FC = () => {
     }
   };
 
-  const filteredUsers = users.filter(
-    u => u.name.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase())
-  );
+  const summary = useMemo(() => ({
+    total: users.length,
+    participantes: users.filter(u => u.role === 'PARTICIPANTE').length,
+    organizadores: users.filter(u => u.role === 'ORGANIZADOR').length,
+    administradores: users.filter(u => u.role === 'ADMINISTRADOR').length,
+  }), [users]);
+
+  const filteredUsers = useMemo(() => {
+    const term = search.trim().toLowerCase();
+
+    return users.filter(u => {
+      const matchesRole = roleFilter === 'TODOS' || u.role === roleFilter;
+      const matchesSearch = !term || u.name.toLowerCase().includes(term) || u.email.toLowerCase().includes(term);
+      return matchesRole && matchesSearch;
+    });
+  }, [users, roleFilter, search]);
+
+  const filterOptions: Array<{ value: RoleFilter; label: string; count: number; icon: React.ReactNode }> = [
+    { value: 'TODOS', label: 'Todos', count: summary.total, icon: <Users className="w-4 h-4" /> },
+    { value: 'PARTICIPANTE', label: 'Participantes', count: summary.participantes, icon: <GraduationCap className="w-4 h-4" /> },
+    { value: 'ORGANIZADOR', label: 'Organizadores', count: summary.organizadores, icon: <UserCog className="w-4 h-4" /> },
+    { value: 'ADMINISTRADOR', label: 'Admins', count: summary.administradores, icon: <Crown className="w-4 h-4" /> },
+  ];
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight font-outfit">Gestão de Usuários</h1>
-          <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-            Gerencie perfis acadêmicos, controle acessos e homologue organizadores do IFPR.
-          </p>
+    <div className="space-y-7">
+      <div className="space-y-5">
+        <div className="flex flex-col xl:flex-row xl:items-end xl:justify-between gap-5">
+          <div className="max-w-2xl">
+            <div className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-teal-600 dark:text-teal-400 mb-3">
+              <ShieldCheck className="w-3.5 h-3.5" />
+              Controle institucional
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-950 dark:text-white tracking-tight font-outfit">
+              Usuários e permissões
+            </h1>
+            <p className="text-sm text-slate-600 dark:text-slate-400 mt-2 leading-relaxed">
+              Acompanhe os perfis cadastrados e mantenha organizadores homologados sem misturar permissões administrativas.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-3 rounded-2xl border border-slate-200 dark:border-slate-850 bg-white dark:bg-[#0c0c0c] overflow-hidden min-w-full sm:min-w-[420px] xl:min-w-[460px]">
+            <div className="p-4 border-r border-slate-200 dark:border-slate-850">
+              <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Usuários</span>
+              <span className="block text-2xl font-extrabold text-slate-950 dark:text-white font-mono mt-1">{summary.total}</span>
+            </div>
+            <div className="p-4 border-r border-slate-200 dark:border-slate-850">
+              <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Equipe</span>
+              <span className="block text-2xl font-extrabold text-teal-600 dark:text-teal-400 font-mono mt-1">{summary.organizadores}</span>
+            </div>
+            <div className="p-4">
+              <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Admins</span>
+              <span className="block text-2xl font-extrabold text-sky-600 dark:text-sky-400 font-mono mt-1">{summary.administradores}</span>
+            </div>
+          </div>
         </div>
 
-        <div className="relative w-full sm:w-72">
+        <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_320px] items-stretch">
+          <div className="grid grid-cols-2 xl:grid-cols-4 gap-2.5">
+            {filterOptions.map(option => {
+              const active = roleFilter === option.value;
+
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setRoleFilter(option.value)}
+                  className={`min-h-20 text-left rounded-2xl border px-4 py-3 transition-all cursor-pointer ${
+                    active
+                      ? 'border-teal-500/40 bg-teal-500/10 text-slate-950 dark:text-white shadow-sm'
+                      : 'border-slate-200 dark:border-slate-850 bg-white dark:bg-[#0c0c0c] hover:border-slate-300 dark:hover:border-slate-750 text-slate-600 dark:text-slate-400'
+                  }`}
+                >
+                  <span className={`inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider ${active ? 'text-teal-700 dark:text-teal-400' : 'text-slate-400 dark:text-slate-500'}`}>
+                    {option.icon}
+                    {option.label}
+                  </span>
+                  <span className="block text-2xl font-extrabold font-mono mt-2">{option.count}</span>
+                </button>
+              );
+            })}
+          </div>
+
           <Input
             placeholder="Buscar por nome ou e-mail..."
             value={search}
             onChange={e => setSearch(e.target.value)}
             icon={<Search className="w-4.5 h-4.5" />}
+            className="h-full min-h-20 text-base"
           />
         </div>
       </div>
@@ -171,38 +281,59 @@ export const UsersList: React.FC = () => {
           </p>
         </Card>
       ) : (
-      <Card variant="default" className="overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 text-xs font-semibold uppercase tracking-wider bg-slate-50 dark:bg-slate-900/40">
-                <th className="py-4 pl-6">Usuário</th>
-                <th className="py-4 px-4">E-mail</th>
-                <th className="py-4 px-4">Função</th>
-                <th className="py-4 px-4">Data de Cadastro</th>
-                <th className="py-4 pr-6 text-right">Ações</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-850/60 text-sm">
-              {filteredUsers.map(u => (
-                <tr key={u.id} className="hover:bg-slate-100/30 dark:hover:bg-slate-850/30 transition-colors text-slate-800 dark:text-slate-200">
-                  <td className="py-4 pl-6 font-bold flex items-center gap-2.5">
-                    <div className="bg-slate-50 dark:bg-slate-950 p-1.5 rounded-lg border border-slate-200 dark:border-slate-850 text-slate-500 dark:text-slate-400">
-                      <UserIcon className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+        <div className="space-y-3">
+          <div className="hidden lg:grid grid-cols-[minmax(0,1.4fr)_minmax(220px,0.9fr)_180px_220px] gap-4 px-5 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
+            <span>Perfil</span>
+            <span>Contato</span>
+            <span>Entrada</span>
+            <span className="text-right">Ações</span>
+          </div>
+
+          <div className="space-y-2.5">
+            {filteredUsers.map(u => (
+              <article
+                key={u.id}
+                className="relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-850 bg-white dark:bg-[#0c0c0c] hover:border-slate-300 dark:hover:border-slate-750 transition-all"
+              >
+                <div className={`absolute left-0 top-0 h-full w-1 ${roleAccents[u.role]}`} />
+
+                <div className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(220px,0.9fr)_180px_220px] lg:items-center p-4 sm:p-5 pl-5 sm:pl-6">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className={`w-11 h-11 rounded-2xl border flex items-center justify-center text-sm font-extrabold shrink-0 ${rolePanels[u.role]}`}>
+                      {getInitials(u.name)}
                     </div>
-                    <span>{u.name}</span>
-                  </td>
-                  <td className="py-4 px-4 text-slate-600 dark:text-slate-400">{u.email}</td>
-                  <td className="py-4 px-4">
-                    <Badge variant={u.role === 'ORGANIZADOR' || u.role === 'ADMINISTRADOR' ? 'success' : 'neutral'}>
-                      {u.role}
-                    </Badge>
-                  </td>
-                  <td className="py-4 px-4 text-slate-550 dark:text-slate-450 text-xs">
-                    {new Date(u.createdAt).toLocaleDateString('pt-BR')}
-                  </td>
-                  <td className="py-4 pr-6 text-right">
-                    <div className="flex items-center justify-end gap-2.5">
+
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="text-sm font-extrabold text-slate-950 dark:text-white truncate">
+                          {u.name}
+                        </h3>
+                        {u.id === currentUser?.id && (
+                          <Badge variant="info" className="text-[9px]">Você</Badge>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2 mt-1">
+                        <Badge variant={roleBadgeVariant[u.role]}>
+                          {roleLabels[u.role]}
+                        </Badge>
+                        <span className="text-[11px] text-slate-500 dark:text-slate-450">
+                          {roleDescriptions[u.role]}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400 min-w-0">
+                    <Mail className="w-4 h-4 text-slate-400 dark:text-slate-500 shrink-0" />
+                    <span className="truncate">{u.email}</span>
+                  </div>
+
+                  <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-450">
+                    <CalendarDays className="w-4 h-4 text-slate-400 dark:text-slate-500 shrink-0" />
+                    <span>{new Date(u.createdAt).toLocaleDateString('pt-BR')}</span>
+                  </div>
+
+                  <div className="flex items-center justify-start lg:justify-end gap-2.5">
                       {isAdmin && u.role !== 'ADMINISTRADOR' && (
                         <Button
                           variant="outline"
@@ -212,25 +343,23 @@ export const UsersList: React.FC = () => {
                           onClick={() => toggleRole(u)}
                           title={u.role === 'ORGANIZADOR' ? 'Rebaixar para Participante' : 'Promover para Organizador'}
                         >
-                          Alternar Função
+                          {u.role === 'ORGANIZADOR' ? 'Rebaixar' : 'Promover'}
                         </Button>
                       )}
                       <button
                         onClick={() => deleteUser(u)}
                         disabled={busyUserId === u.id || u.id === currentUser?.id}
-                        className="bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 p-2 rounded-xl transition-all border border-rose-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 dark:text-rose-400 p-2 rounded-xl transition-all border border-rose-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
                         title="Remover conta"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
         </div>
-      </Card>
       )}
     </div>
   );
