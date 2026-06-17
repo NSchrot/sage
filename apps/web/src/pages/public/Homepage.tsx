@@ -2,26 +2,48 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
-  Calendar,
-  Award,
-  Users,
   ArrowRight,
-  Sparkles,
-  BookOpen,
-  Laptop,
-  GraduationCap,
-  MapPin,
   Clock,
+  MapPin,
   UserCheck,
   ChevronRight,
-  ShieldCheck,
-  CheckCircle2,
-  CalendarDays,
-  Target
+  Terminal,
+  Cpu,
+  Award,
+  Code2,
+  Presentation,
+  Trophy,
+  Users,
+  Sparkles,
+  BookOpen,
 } from 'lucide-react';
 import { Button } from '../../components/common/Button';
-import { Card } from '../../components/common/Card';
 import { Navbar } from '../../components/Navbar';
+
+const SectionLabel: React.FC<{ number: string; text: string }> = ({ number, text }) => (
+  <div className="flex items-center gap-3 mb-6">
+    <span className="text-[11px] font-mono font-semibold text-teal-600 dark:text-teal-500 tracking-wider">
+      {number}
+    </span>
+    <span className="h-px flex-1 max-w-16 bg-neutral-300 dark:bg-[#2a2a2a]" />
+    <span className="text-[10px] font-mono font-medium text-neutral-400 dark:text-neutral-600 uppercase tracking-widest">
+      {text}
+    </span>
+  </div>
+);
+
+const CategoryTag: React.FC<{ children: React.ReactNode; color?: 'teal' | 'amber' | 'rose' }> = ({ children, color = 'teal' }) => {
+  const colors = {
+    teal: 'text-teal-600 dark:text-teal-400 border-teal-500/30',
+    amber: 'text-amber-600 dark:text-amber-400 border-amber-500/30',
+    rose: 'text-rose-600 dark:text-rose-400 border-rose-500/30',
+  };
+  return (
+    <span className={`text-[10px] font-mono font-semibold uppercase tracking-wider border border-dashed px-2 py-0.5 rounded ${colors[color]}`}>
+      {children}
+    </span>
+  );
+};
 
 export const Homepage: React.FC = () => {
   const { isAuthenticated } = useAuth();
@@ -29,245 +51,163 @@ export const Homepage: React.FC = () => {
 
   const handleScrollToProgram = (e: React.MouseEvent) => {
     e.preventDefault();
-    const element = document.getElementById('programacao');
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
-    }
+    document.getElementById('programacao')?.scrollIntoView({ behavior: 'smooth' });
   };
 
   const scheduleData = [
     {
       day: 1,
-      date: 'Segunda-feira, 22 de Outubro',
+      label: 'DIA 01',
+      date: 'Segunda, 22 de Outubro',
       activities: [
-        {
-          time: '08:30 - 09:00',
-          title: 'Credenciamento e Acolhimento',
-          type: 'Credenciamento',
-          location: 'Auditório Principal',
-          speaker: 'Comissão Organizadora',
-          category: 'Geral',
-        },
-        {
-          time: '09:00 - 10:00',
-          title: 'Solenidade de Abertura Oficial da SITEC',
-          type: 'Abertura',
-          location: 'Auditório Principal',
-          speaker: 'Direção Geral e Coordenação de Informática',
-          category: 'Abertura',
-        },
-        {
-          time: '10:00 - 12:00',
-          title: 'Palestra Magna: O Futuro da Informática e Sociedade',
-          type: 'Palestra',
-          location: 'Auditório Principal',
-          speaker: 'Dr. Alexandre Souza',
-          category: 'Tecnologia',
-        },
-        {
-          time: '14:00 - 17:30',
-          title: 'Oficina Prática: Introdução ao Desenvolvimento Web Moderno',
-          type: 'Oficina',
-          location: 'Laboratório de Informática 2',
-          speaker: 'Prof. Roberto Mendes',
-          category: 'Oficina',
-        },
-        {
-          time: '19:00 - 20:30',
-          title: 'Palestra: Segurança de Dados e Privacidade na Era Digital',
-          type: 'Palestra',
-          location: 'Auditório Principal',
-          speaker: 'Msc. Fernando Silva',
-          category: 'Segurança',
-        }
-      ]
+        { time: '08:30 – 09:00', title: 'Credenciamento e Acolhimento', type: 'Abertura', location: 'Auditório Principal', speaker: 'Comissão Organizadora' },
+        { time: '09:00 – 10:00', title: 'Solenidade de Abertura Oficial', type: 'Abertura', location: 'Auditório Principal', speaker: 'Direção Geral do Câmpus' },
+        { time: '10:00 – 12:00', title: 'Palestra Magna: O Futuro da Informática e Sociedade', type: 'Palestra', location: 'Auditório Principal', speaker: 'Dr. Alexandre Souza' },
+        { time: '14:00 – 17:30', title: 'Oficina: Introdução ao Desenvolvimento Web Moderno', type: 'Oficina', location: 'Laboratório de Informática 2', speaker: 'Prof. Roberto Mendes' },
+        { time: '19:00 – 20:30', title: 'Palestra: Segurança de Dados na Era Digital', type: 'Palestra', location: 'Auditório Principal', speaker: 'Msc. Fernando Silva' },
+      ],
     },
     {
       day: 2,
-      date: 'Terça-feira, 23 de Outubro',
+      label: 'DIA 02',
+      date: 'Terça, 23 de Outubro',
       activities: [
-        {
-          time: '08:30 - 12:00',
-          title: 'Oficina Prática: Internet das Coisas (IoT) com Arduino',
-          type: 'Oficina',
-          location: 'Laboratório de Eletrônica e IoT',
-          speaker: 'Prof. Carlos Lima',
-          category: 'Oficina',
-        },
-        {
-          time: '10:30 - 12:00',
-          title: 'Mesa Redonda: Mulheres na Tecnologia e Integração',
-          type: 'Atividade Especial',
-          location: 'Auditório Principal',
-          speaker: 'Convidadas Especiais do Setor de TI',
-          category: 'Integração',
-        },
-        {
-          time: '14:00 - 17:30',
-          title: 'Oficina Prática: Princípios de Design e Usabilidade Centrada no Usuário',
-          type: 'Oficina',
-          location: 'Laboratório de Informática 1',
-          speaker: 'Mariana Costa (Designer de UX)',
-          category: 'Design',
-        },
-        {
-          time: '19:30 - 21:00',
-          title: 'Palestra: Inteligência Artificial Aplicada e Mercado de Trabalho',
-          type: 'Palestra',
-          location: 'Auditório Principal',
-          speaker: 'Dr. Eduardo Santos',
-          category: 'Tecnologia',
-        }
-      ]
+        { time: '08:30 – 12:00', title: 'Oficina: Internet das Coisas com Arduino', type: 'Oficina', location: 'Lab. de Eletrônica e IoT', speaker: 'Prof. Carlos Lima' },
+        { time: '10:30 – 12:00', title: 'Mesa Redonda: Mulheres na Tecnologia', type: 'Especial', location: 'Auditório Principal', speaker: 'Convidadas do Setor de TI' },
+        { time: '14:00 – 17:30', title: 'Oficina: Design e Usabilidade Centrada no Usuário', type: 'Oficina', location: 'Laboratório de Informática 1', speaker: 'Mariana Costa (UX Designer)' },
+        { time: '19:30 – 21:00', title: 'Palestra: IA Aplicada e Mercado de Trabalho', type: 'Palestra', location: 'Auditório Principal', speaker: 'Dr. Eduardo Santos' },
+      ],
     },
     {
       day: 3,
-      date: 'Quarta-feira, 24 de Outubro',
+      label: 'DIA 03',
+      date: 'Quarta, 24 de Outubro',
       activities: [
-        {
-          time: '09:00 - 12:00',
-          title: 'Mostra de Trabalhos: Apresentações de Projetos Acadêmicos',
-          type: 'Atividades Especiais',
-          location: 'Hall de Entrada do Campus',
-          speaker: 'Discentes e Docentes do IFPR',
-          category: 'Acadêmico',
-        },
-        {
-          time: '14:00 - 17:00',
-          title: 'Oficina Prática: Versionamento de Código com Git e GitHub',
-          type: 'Oficina',
-          location: 'Laboratório de Informática 1',
-          speaker: 'Profª Aline Rocha',
-          category: 'Oficina',
-        },
-        {
-          time: '17:00 - 19:30',
-          title: 'Atividade de Integração: Torneio de Programação e Desafios Digitais',
-          type: 'Atividades Especiais',
-          location: 'Laboratório de Informática 2',
-          speaker: 'Grêmio Estudantil e Professores',
-          category: 'Integração',
-        },
-        {
-          time: '20:00 - 21:30',
-          title: 'Encerramento e Cerimônia de Premiações',
-          type: 'Encerramento',
-          location: 'Auditório Principal',
-          speaker: 'Comissão Organizadora da SITEC',
-          category: 'Geral',
-        }
-      ]
-    }
+        { time: '09:00 – 12:00', title: 'Mostra de Trabalhos Acadêmicos', type: 'Especial', location: 'Hall de Entrada do Campus', speaker: 'Discentes e Docentes IFPR' },
+        { time: '14:00 – 17:00', title: 'Oficina: Versionamento com Git e GitHub', type: 'Oficina', location: 'Laboratório de Informática 1', speaker: 'Profª Aline Rocha' },
+        { time: '17:00 – 19:30', title: 'Torneio de Programação e Desafios Digitais', type: 'Especial', location: 'Laboratório de Informática 2', speaker: 'Grêmio Estudantil' },
+        { time: '20:00 – 21:30', title: 'Encerramento e Cerimônia de Premiações', type: 'Abertura', location: 'Auditório Principal', speaker: 'Comissão Organizadora SITEC' },
+      ],
+    },
+  ];
+
+  const highlights = [
+    { title: 'Oficinas Práticas', desc: 'Laboratórios hands-on focados em desenvolvimento, novas linguagens e ferramentas essenciais do setor tecnológico.', tag: 'oficina', color: 'teal' as const, wide: true },
+    { title: 'Palestras Convidadas', desc: 'Diálogos com profissionais e pesquisadores sobre tendências, carreira e inovação no cenário tecnológico atual.', tag: 'palestra', color: 'amber' as const, wide: false },
+    { title: 'Certificação Digital', desc: 'Emissão eletrônica de certificados oficiais com carga horária reconhecida para atividades complementares.', tag: 'certificado', color: 'teal' as const, wide: false },
+    { title: 'Torneios e Competições', desc: 'Maratonas de programação, desafios lógicos e competições acadêmicas entre equipes de estudantes.', tag: 'torneio', color: 'rose' as const, wide: true },
+    { title: 'Mostra de Trabalhos', desc: 'Espaço para apresentação de projetos acadêmicos, pesquisas e trabalhos de conclusão de curso.', tag: 'acadêmico', color: 'amber' as const, wide: false },
+    { title: 'Integração Acadêmica', desc: 'Atividades de socialização, networking e troca de experiências entre estudantes, docentes e comunidade.', tag: 'integração', color: 'teal' as const, wide: false },
+  ];
+
+  const steps = [
+    { n: '01', title: 'Consulte a programação', desc: 'Navegue pela agenda completa e selecione as atividades que mais combinam com seus interesses e formação.' },
+    { n: '02', title: 'Faça sua inscrição', desc: 'Crie sua conta, garanta sua vaga nas oficinas e palestras desejadas e monte sua grade personalizada.' },
+    { n: '03', title: 'Participe das atividades', desc: 'Compareça nos dias e horários indicados. Sua presença será registrada pela coordenação do evento.' },
+    { n: '04', title: 'Acesse seus certificados', desc: 'Após homologação de presença, emita os certificados oficiais com validação digital diretamente pelo portal.' },
   ];
 
   return (
-    <div className="bg-slate-50 dark:bg-black text-slate-800 dark:text-slate-100 min-h-screen relative overflow-hidden font-sans transition-colors duration-300">
-      
-      <div className="absolute top-0 left-1/4 w-96 h-96 bg-emerald-600/5 dark:bg-emerald-600/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute top-1/3 right-1/4 w-[450px] h-[450px] bg-blue-600/5 dark:bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-10 left-10 w-96 h-96 bg-emerald-600/5 dark:bg-emerald-600/10 rounded-full blur-3xl pointer-events-none" />
-
-      
+    <div className="min-h-screen relative overflow-hidden">
       <Navbar />
 
       
-      <section className="relative pt-16 pb-20 md:pt-24 md:pb-28 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-b border-slate-200 dark:border-[#121212]">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-          
-          <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 rounded-full text-xs font-semibold tracking-wide uppercase select-none">
-              <Sparkles className="w-3.5 h-3.5 animate-pulse" />
-              <span>IFPR Câmpus Paranaguá</span>
-            </div>
-            
-            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight font-outfit">
-              SITEC
-            </h1>
-            
-            <h2 className="text-xl sm:text-2xl font-bold text-slate-700 dark:text-slate-350 tracking-wide">
-              Semana de Informática, Tecnologia e Integração Acadêmica
-            </h2>
-            
-            <p className="text-slate-600 dark:text-slate-400 text-base sm:text-lg max-w-2xl mx-auto lg:mx-0 leading-relaxed">
-              Bem-vindo à SITEC, um espaço de encontro, aprendizado e troca de experiências entre estudantes, professores e comunidade. Acompanhe a programação, participe das atividades e aproveite tudo o que o evento preparou para esta edição.
-            </p>
+      <section className="relative pt-16 pb-20 md:pt-20 md:pb-28 border-b border-neutral-200 dark:border-[#1a1a1a]">
+        
+        <div className="absolute inset-0 dot-grid pointer-events-none" />
+        
+        <div className="hidden lg:block absolute left-[8%] top-0 bottom-0 w-px bg-neutral-200 dark:bg-[#1a1a1a]" />
 
-            <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-4">
-              <a href="#programacao" onClick={handleScrollToProgram}>
-                <Button variant="primary" size="lg" icon={<ArrowRight className="w-5 h-5" />}>
-                  Ver programação
-                </Button>
-              </a>
-              {isAuthenticated ? (
-                <Link to="/dashboard">
-                  <Button variant="outline" size="lg">
-                    Área do participante
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
+            
+            <div className="lg:col-span-7 space-y-7 text-center lg:text-left">
+              <SectionLabel number="01" text="hero" />
+
+              <h1 className="text-7xl sm:text-8xl lg:text-9xl font-bold tracking-tighter text-neutral-900 dark:text-white font-display leading-none">
+                SITEC
+              </h1>
+
+              <h2 className="text-lg sm:text-xl font-medium text-neutral-600 dark:text-neutral-400 tracking-wide max-w-xl mx-auto lg:mx-0">
+                Semana de Informática, Tecnologia
+                <br className="hidden sm:block" />
+                e Integração Acadêmica
+              </h2>
+
+              <p className="text-neutral-500 dark:text-neutral-500 text-sm sm:text-base max-w-lg mx-auto lg:mx-0 leading-relaxed">
+                Três dias de palestras, oficinas práticas, competições e apresentações acadêmicas no IFPR Câmpus Paranaguá. Um espaço para aprender, criar, compartilhar e construir futuro.
+              </p>
+
+              <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3 pt-2">
+                <a href="#programacao" onClick={handleScrollToProgram}>
+                  <Button variant="primary" size="lg" icon={<ArrowRight className="w-5 h-5" />}>
+                    Ver programação
                   </Button>
-                </Link>
-              ) : (
-                <>
+                </a>
+                {isAuthenticated ? (
+                  <Link to="/dashboard">
+                    <Button variant="outline" size="lg">
+                      Área do participante
+                    </Button>
+                  </Link>
+                ) : (
                   <Link to="/register">
                     <Button variant="outline" size="lg">
                       Fazer inscrição
                     </Button>
                   </Link>
-                  <Link to="/login">
-                    <Button variant="ghost" size="lg" className="text-slate-655 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white flex items-center gap-1.5">
-                      Área do participante
-                    </Button>
-                  </Link>
-                </>
-              )}
+                )}
+              </div>
             </div>
-          </div>
 
-          
-          <div className="lg:col-span-5 w-full max-w-md mx-auto">
-            <div className="bg-white dark:bg-[#0c0c0c] border border-slate-200 dark:border-[#1f1f1f] rounded-2xl p-6 shadow-xl dark:shadow-none relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-600/5 rounded-full blur-2xl pointer-events-none" />
-              
-              <h3 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest border-b border-slate-100 dark:border-slate-900 pb-3 mb-4">
-                Informações Importantes
-              </h3>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 bg-slate-50 dark:bg-[#040404] border border-slate-150 dark:border-[#121212] rounded-xl flex flex-col justify-between space-y-2 group hover:border-emerald-500/20 dark:hover:border-emerald-500/30 transition-all">
-                  <div className="p-2 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg w-fit">
-                    <Laptop className="w-5 h-5" />
+            
+            <div className="lg:col-span-5 w-full max-w-md mx-auto lg:mx-0">
+              <div className="bg-neutral-900 dark:bg-[#0a0a0a] border border-neutral-800 dark:border-[#1a1a1a] rounded-xl overflow-hidden shadow-2xl">
+                
+                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-neutral-800 dark:border-[#1a1a1a] bg-neutral-900/80 dark:bg-[#080808]">
+                  <div className="flex gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full bg-rose-500/50" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-amber-500/50" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-teal-500/50" />
                   </div>
-                  <div>
-                    <span className="block text-lg font-bold text-slate-850 dark:text-white">Oficinas</span>
-                    <span className="text-[10px] text-slate-550 dark:text-slate-500 font-medium">Práticas de laboratório</span>
-                  </div>
+                  <span className="ml-2 text-[10px] font-mono text-neutral-600">sitec_info.conf</span>
                 </div>
-
-                <div className="p-4 bg-slate-50 dark:bg-[#040404] border border-slate-150 dark:border-[#121212] rounded-xl flex flex-col justify-between space-y-2 group hover:border-emerald-500/20 dark:hover:border-emerald-500/30 transition-all">
-                  <div className="p-2 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-lg w-fit">
-                    <Users className="w-5 h-5" />
+                
+                <div className="p-5 font-mono text-[13px] leading-relaxed space-y-1">
+                  <div>
+                    <span className="text-teal-400">evento</span>
+                    <span className="text-neutral-600">: </span>
+                    <span className="text-amber-400">"SITEC 2026"</span>
                   </div>
                   <div>
-                    <span className="block text-lg font-bold text-slate-850 dark:text-white">Palestras</span>
-                    <span className="text-[10px] text-slate-550 dark:text-slate-500 font-medium">Convidados e mercado</span>
-                  </div>
-                </div>
-
-                <div className="p-4 bg-slate-50 dark:bg-[#040404] border border-slate-150 dark:border-[#121212] rounded-xl flex flex-col justify-between space-y-2 group hover:border-emerald-500/20 dark:hover:border-emerald-500/30 transition-all">
-                  <div className="p-2 bg-purple-500/10 text-purple-650 dark:text-purple-400 rounded-lg w-fit">
-                    <Award className="w-5 h-5" />
+                    <span className="text-teal-400">local</span>
+                    <span className="text-neutral-600">: </span>
+                    <span className="text-amber-400">"IFPR Câmpus Paranaguá"</span>
                   </div>
                   <div>
-                    <span className="block text-lg font-bold text-slate-850 dark:text-white">Certificados</span>
-                    <span className="text-[10px] text-slate-550 dark:text-slate-500 font-medium">Horas complementares</span>
-                  </div>
-                </div>
-
-                <div className="p-4 bg-slate-50 dark:bg-[#040404] border border-slate-150 dark:border-[#121212] rounded-xl flex flex-col justify-between space-y-2 group hover:border-emerald-500/20 dark:hover:border-emerald-500/30 transition-all">
-                  <div className="p-2 bg-rose-500/10 text-rose-600 dark:text-rose-400 rounded-lg w-fit">
-                    <CalendarDays className="w-5 h-5" />
+                    <span className="text-teal-400">data</span>
+                    <span className="text-neutral-600">: </span>
+                    <span className="text-amber-400">"22–24 Out 2026"</span>
                   </div>
                   <div>
-                    <span className="block text-lg font-bold text-slate-850 dark:text-white">Atividades</span>
-                    <span className="text-[10px] text-slate-550 dark:text-slate-500 font-medium">Integração e torneios</span>
+                    <span className="text-teal-400">edição</span>
+                    <span className="text-neutral-600">: </span>
+                    <span className="text-amber-400">"3ª Edição"</span>
+                  </div>
+                  <div className="pt-2 border-t border-neutral-800 dark:border-[#1a1a1a] mt-3 text-neutral-500 text-[10px] tracking-wider">--- STATS ---</div>
+                  <div className="grid grid-cols-3 gap-4 pt-3">
+                    <div className="text-center">
+                      <span className="block text-2xl font-bold text-white">8</span>
+                      <span className="text-[10px] text-neutral-500 uppercase tracking-wider">Oficinas</span>
+                    </div>
+                    <div className="text-center">
+                      <span className="block text-2xl font-bold text-white">6</span>
+                      <span className="text-[10px] text-neutral-500 uppercase tracking-wider">Palestras</span>
+                    </div>
+                    <div className="text-center">
+                      <span className="block text-2xl font-bold text-white">200<span className="text-teal-400 text-lg">+</span></span>
+                      <span className="text-[10px] text-neutral-500 uppercase tracking-wider">Participantes</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -277,207 +217,185 @@ export const Homepage: React.FC = () => {
       </section>
 
       
-      <section className="py-20 bg-white dark:bg-[#050505]/40 border-b border-slate-200 dark:border-[#121212] transition-colors">
-        <div className="max-w-4xl mx-auto px-4 text-center space-y-5">
-          <h2 className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">Acolhimento</h2>
-          <h3 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white font-outfit">
-            Seja bem-vindo à SITEC
-          </h3>
-          <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-base sm:text-lg">
-            A SITEC foi pensada para reunir conhecimento, tecnologia e participação em uma programação construída para aproximar a comunidade acadêmica de diferentes experiências formativas. Durante o evento, os participantes poderão acompanhar atividades, oficinas, palestras e outros momentos de integração ao longo da programação.
-          </p>
-        </div>
-      </section>
+      <section className="py-24 md:py-32 border-b border-neutral-200 dark:border-[#1a1a1a]">
+        <div className="max-w-4xl mx-auto px-4 text-center space-y-6">
+          <SectionLabel number="02" text="boas-vindas" />
 
-      
-      <section className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16 border-b border-slate-200 dark:border-[#121212]">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-          <div className="lg:col-span-4 space-y-4">
-            <h2 className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">Sobre o evento</h2>
-            <h3 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white font-outfit">O que é a SITEC?</h3>
-            <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
-              A SITEC é um evento acadêmico voltado à promoção de atividades relacionadas à informática, tecnologia, inovação e formação estudantil. Sua proposta é criar um ambiente de aprendizagem, compartilhamento de experiências e integração entre participantes, convidados e organização.
+          <div className="space-y-4">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-neutral-900 dark:text-white font-display tracking-tight leading-tight">
+              Um espaço para aprender,
+              <br />
+              <span className="text-teal-600 dark:text-teal-400">criar</span> e <span className="text-teal-600 dark:text-teal-400">compartilhar</span>.
+            </h2>
+            <p className="text-neutral-500 dark:text-neutral-500 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
+              A SITEC foi pensada para reunir conhecimento, tecnologia e participação. Durante o evento, estudantes, professores e convidados compartilham experiências formativas em uma programação construída para aproximar a comunidade acadêmica de diferentes saberes.
             </p>
           </div>
 
-          <div className="lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <Card variant="default" title="Programação diversificada">
-              <p className="text-slate-600 dark:text-slate-400 text-xs leading-relaxed">
-                Atividades planejadas para abranger diversos temas da área de informática e tecnologia, trazendo o que há de mais atual no mercado.
-              </p>
-            </Card>
-
-            <Card variant="default" title="Atividades acadêmicas">
-              <p className="text-slate-600 dark:text-slate-400 text-xs leading-relaxed">
-                Palestras, workshops e oficinas ministradas por profissionais experientes do mercado tecnológico e corpo docente do IFPR.
-              </p>
-            </Card>
-
-            <Card variant="default" title="Participação estudantil">
-              <p className="text-slate-600 dark:text-slate-400 text-xs leading-relaxed">
-                Espaço totalmente aberto para a integração, o protagonismo juvenil, competições recreativas e a troca ativa de ideias entre os estudantes.
-              </p>
-            </Card>
-
-            <Card variant="default" title="Certificação das atividades">
-              <p className="text-slate-600 dark:text-slate-400 text-xs leading-relaxed">
-                Emissão eletrônica de certificados oficiais de participação com carga horária reconhecida para validação de atividades complementares.
-              </p>
-            </Card>
+          <div className="flex justify-center pt-2">
+            <div className="h-px w-32 bg-gradient-to-r from-transparent via-teal-500/40 to-transparent" />
           </div>
         </div>
       </section>
 
       
-      <section className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12 border-b border-slate-200 dark:border-[#121212]">
-        <div className="text-center space-y-3">
-          <h2 className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">Destaques</h2>
-          <h3 className="text-3xl font-extrabold text-slate-900 dark:text-white font-outfit">Destaques da edição</h3>
-          <p className="text-slate-600 dark:text-slate-400 text-sm max-w-2xl mx-auto">
-            Descubra as principais experiências e diferenciais preparados com dedicação para a nossa semana acadêmica.
-          </p>
-        </div>
+      <section className="py-20 md:py-28 border-b border-neutral-200 dark:border-[#1a1a1a]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 items-start">
+            
+            <div className="lg:col-span-5 space-y-6">
+              <SectionLabel number="03" text="sobre" />
+              <h3 className="text-3xl sm:text-4xl font-bold text-neutral-900 dark:text-white font-display tracking-tight">
+                O que é a SITEC?
+              </h3>
+              <div className="space-y-4 text-neutral-600 dark:text-neutral-400 text-sm leading-relaxed">
+                <p>
+                  A SITEC é o principal evento acadêmico de informática e tecnologia do IFPR Câmpus Paranaguá. Sua proposta é criar um ambiente de aprendizagem, compartilhamento de experiências e integração entre toda a comunidade acadêmica.
+                </p>
+                <p>
+                  A programação reúne oficinas práticas em laboratório, palestras com profissionais atuantes no mercado, competições entre estudantes e apresentações de trabalhos acadêmicos — tudo pensado para enriquecer a formação e conectar saberes.
+                </p>
+              </div>
+            </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div className="p-6 bg-white dark:bg-[#0c0c0c] border border-slate-200 dark:border-[#1f1f1f] rounded-2xl flex items-start gap-4 hover:border-emerald-500/20 dark:hover:border-emerald-500/30 shadow-sm dark:shadow-none transition-all">
-            <div className="p-2.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-xl">
-              <Laptop className="w-5.5 h-5.5" />
-            </div>
-            <div>
-              <h4 className="text-sm font-bold text-slate-900 dark:text-white tracking-wide">Oficinas práticas</h4>
-              <p className="text-xs text-slate-655 dark:text-slate-400 mt-2 leading-relaxed">
-                Laboratórios práticos focados em desenvolvimento, novas linguagens e ferramentas fundamentais do setor tecnológico.
-              </p>
-            </div>
-          </div>
-
-          <div className="p-6 bg-white dark:bg-[#0c0c0c] border border-slate-200 dark:border-[#1f1f1f] rounded-2xl flex items-start gap-4 hover:border-emerald-500/20 dark:hover:border-emerald-500/30 shadow-sm dark:shadow-none transition-all">
-            <div className="p-2.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-xl">
-              <BookOpen className="w-5.5 h-5.5" />
-            </div>
-            <div>
-              <h4 className="text-sm font-bold text-slate-900 dark:text-white tracking-wide">Palestras e apresentações</h4>
-              <p className="text-xs text-slate-655 dark:text-slate-400 mt-2 leading-relaxed">
-                Diálogos inspiradores com palestrantes e apresentação de pesquisas inovadoras desenvolvidas no âmbito acadêmico.
-              </p>
-            </div>
-          </div>
-
-          <div className="p-6 bg-white dark:bg-[#0c0c0c] border border-slate-200 dark:border-[#1f1f1f] rounded-2xl flex items-start gap-4 hover:border-emerald-500/20 dark:hover:border-emerald-500/30 shadow-sm dark:shadow-none transition-all">
-            <div className="p-2.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-xl">
-              <Award className="w-5.5 h-5.5" />
-            </div>
-            <div>
-              <h4 className="text-sm font-bold text-slate-900 dark:text-white tracking-wide">Certificados digitais</h4>
-              <p className="text-xs text-slate-655 dark:text-slate-400 mt-2 leading-relaxed">
-                Comprovação digital imediata após a conclusão de atividades presenciais para enriquecer sua formação profissional.
-              </p>
-            </div>
-          </div>
-
-          <div className="p-6 bg-white dark:bg-[#0c0c0c] border border-slate-200 dark:border-[#1f1f1f] rounded-2xl flex items-start gap-4 hover:border-emerald-500/20 dark:hover:border-emerald-500/30 shadow-sm dark:shadow-none transition-all">
-            <div className="p-2.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-xl">
-              <CheckCircle2 className="w-5.5 h-5.5" />
-            </div>
-            <div>
-              <h4 className="text-sm font-bold text-slate-900 dark:text-white tracking-wide">Inscrições por atividade</h4>
-              <p className="text-xs text-slate-655 dark:text-slate-400 mt-2 leading-relaxed">
-                Reserve seu lugar nos workshops e painéis com facilidade, garantindo a sua grade de atividades personalizada.
-              </p>
-            </div>
-          </div>
-
-          <div className="p-6 bg-white dark:bg-[#0c0c0c] border border-slate-200 dark:border-[#1f1f1f] rounded-2xl flex items-start gap-4 hover:border-emerald-500/20 dark:hover:border-emerald-500/30 shadow-sm dark:shadow-none transition-all">
-            <div className="p-2.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-xl">
-              <CalendarDays className="w-5.5 h-5.5" />
-            </div>
-            <div>
-              <h4 className="text-sm font-bold text-slate-900 dark:text-white tracking-wide">Programação organizada</h4>
-              <p className="text-xs text-slate-655 dark:text-slate-400 mt-2 leading-relaxed">
-                Grade de horários clara e dividida para equilibrar palestras teóricas, oficinas dinâmicas e momentos livres.
-              </p>
-            </div>
-          </div>
-
-          <div className="p-6 bg-white dark:bg-[#0c0c0c] border border-slate-200 dark:border-[#1f1f1f] rounded-2xl flex items-start gap-4 hover:border-emerald-500/20 dark:hover:border-emerald-500/30 shadow-sm dark:shadow-none transition-all">
-            <div className="p-2.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-xl">
-              <Target className="w-5.5 h-5.5" />
-            </div>
-            <div>
-              <h4 className="text-sm font-bold text-slate-900 dark:text-white tracking-wide">Experiências de integração</h4>
-              <p className="text-xs text-slate-655 dark:text-slate-400 mt-2 leading-relaxed">
-                Atividades projetadas para estreitar laços entre estudantes, professores da instituição e comunidade acadêmica.
-              </p>
+            
+            <div className="lg:col-span-7">
+              <div className="grid grid-cols-2 gap-4 sm:gap-5">
+                {[
+                  { value: '3ª', label: 'Edição', sub: 'do evento' },
+                  { value: '200+', label: 'Participantes', sub: 'esperados' },
+                  { value: '8', label: 'Oficinas', sub: 'práticas' },
+                  { value: '20h', label: 'Atividades', sub: 'de programação' },
+                ].map((stat, i) => (
+                  <div
+                    key={i}
+                    className="bg-white dark:bg-[#0a0a0a] border border-neutral-200 dark:border-[#1a1a1a] rounded-xl p-6 sm:p-8 hover:border-neutral-300 dark:hover:border-[#2a2a2a] transition-all group"
+                  >
+                    <span className="block text-4xl sm:text-5xl font-bold font-mono text-neutral-900 dark:text-white tracking-tighter group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors">
+                      {stat.value}
+                    </span>
+                    <span className="block text-sm font-semibold text-neutral-700 dark:text-neutral-300 mt-2 font-display">{stat.label}</span>
+                    <span className="block text-xs text-neutral-400 dark:text-neutral-600 font-mono">{stat.sub}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
       </section>
 
       
-      <section id="programacao" className="py-20 bg-slate-50/50 dark:bg-[#050505]/10 border-b border-slate-200 dark:border-[#121212] scroll-mt-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-          <div className="text-center space-y-3">
-            <h2 className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">Agenda Completa</h2>
-            <h3 className="text-3xl font-extrabold text-slate-900 dark:text-white font-outfit">Programação</h3>
-            <p className="text-slate-600 dark:text-slate-400 text-sm max-w-2xl mx-auto">
-              Navegue pelos dias e acompanhe a agenda detalhada de aberturas, oficinas, palestras e atividades de integração.
+      <section className="py-20 md:py-28 border-b border-neutral-200 dark:border-[#1a1a1a]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-14 space-y-4">
+            <SectionLabel number="04" text="destaques" />
+            <h3 className="text-3xl sm:text-4xl font-bold text-neutral-900 dark:text-white font-display tracking-tight">
+              Destaques da edição
+            </h3>
+            <p className="text-neutral-500 dark:text-neutral-500 text-sm max-w-xl mx-auto">
+              Conheça as principais experiências preparadas para esta semana acadêmica.
             </p>
           </div>
 
           
-          <div className="flex flex-col items-center space-y-8">
-            <div className="inline-flex p-1 bg-white dark:bg-[#0c0c0c] border border-slate-200 dark:border-[#1f1f1f] rounded-2xl gap-1 shadow-sm">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-4 sm:gap-5">
+            {highlights.map((h, i) => (
+              <div
+                key={i}
+                className={`${h.wide ? 'md:col-span-7' : 'md:col-span-5'}
+                  bg-white dark:bg-[#0a0a0a] border border-neutral-200 dark:border-[#1a1a1a] rounded-xl p-6
+                  border-l-2 ${
+                    h.color === 'teal' ? 'border-l-teal-500' :
+                    h.color === 'amber' ? 'border-l-amber-500' :
+                    'border-l-rose-500'
+                  }
+                  hover:border-neutral-300 dark:hover:border-[#2a2a2a] transition-all group`}
+              >
+                <CategoryTag color={h.color}>// {h.tag}</CategoryTag>
+                <h4 className="text-lg font-bold text-neutral-900 dark:text-white font-display mt-3 tracking-tight">
+                  {h.title}
+                </h4>
+                <p className="text-sm text-neutral-500 dark:text-neutral-500 mt-2 leading-relaxed">
+                  {h.desc}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      
+      <section id="programacao" className="py-20 md:py-28 bg-neutral-100 dark:bg-[#080808] border-b border-neutral-200 dark:border-[#1a1a1a] scroll-mt-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-14 space-y-4">
+            <SectionLabel number="05" text="agenda" />
+            <h3 className="text-3xl sm:text-4xl font-bold text-neutral-900 dark:text-white font-display tracking-tight">
+              Programação
+            </h3>
+            <p className="text-neutral-500 dark:text-neutral-500 text-sm max-w-xl mx-auto">
+              Navegue pelos dias e acompanhe a agenda detalhada de abertura, oficinas, palestras e atividades de integração.
+            </p>
+          </div>
+
+          
+          <div className="flex flex-col items-center space-y-10">
+            <div className="inline-flex p-1 bg-white dark:bg-[#0a0a0a] border border-neutral-200 dark:border-[#1a1a1a] rounded-xl gap-1">
               {scheduleData.map((d) => (
                 <button
                   key={d.day}
                   onClick={() => setSelectedDay(d.day)}
-                  className={`px-4.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold tracking-wide transition-all cursor-pointer ${
+                  className={`px-5 py-2.5 rounded-lg text-xs font-mono font-bold tracking-wider transition-all cursor-pointer ${
                     selectedDay === d.day
-                      ? 'bg-emerald-600 text-white shadow-md'
-                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                      ? 'bg-teal-600 text-white shadow-md'
+                      : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-50 dark:hover:bg-neutral-900'
                   }`}
                 >
-                  Dia {d.day}
+                  [{d.label}]
                 </button>
               ))}
             </div>
 
             
-            <div className="w-full max-w-3xl space-y-6">
-              <div className="text-center lg:text-left border-b border-slate-200 dark:border-slate-900 pb-3 mb-6">
-                <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Edição Atual • </span>
-                <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">{scheduleData[selectedDay - 1].date}</span>
+            <div className="w-full max-w-3xl">
+              <div className="flex items-center justify-between border-b border-neutral-200 dark:border-[#1a1a1a] pb-3 mb-8">
+                <span className="text-xs font-mono text-neutral-400 dark:text-neutral-600 uppercase tracking-wider">
+                  edição_atual //
+                </span>
+                <span className="text-sm font-semibold text-teal-600 dark:text-teal-400 font-display">
+                  {scheduleData[selectedDay - 1].date}
+                </span>
               </div>
 
-              <div className="relative border-l-2 border-slate-200 dark:border-slate-900 pl-6 ml-4 space-y-8">
-                {scheduleData[selectedDay - 1].activities.map((activity, idx) => (
+              
+              <div className="relative border-l-2 border-neutral-200 dark:border-[#1a1a1a] pl-7 ml-3 space-y-6">
+                {scheduleData[selectedDay - 1].activities.map((act, idx) => (
                   <div key={idx} className="relative group">
                     
-                    <div className="absolute -left-[31px] top-1.5 w-3.5 h-3.5 rounded-full bg-slate-50 dark:bg-black border-2 border-emerald-500 group-hover:scale-125 transition-transform" />
-                    
-                    <div className="bg-white dark:bg-[#0c0c0c] border border-slate-200 dark:border-[#1f1f1f] p-5 rounded-2xl space-y-3 shadow-sm dark:shadow-none hover:border-slate-300 dark:hover:border-[#2f2f2f] transition-all">
+                    <div className="absolute -left-[33px] top-2 w-3 h-3 rounded-full border-2 border-teal-500 bg-neutral-100 dark:bg-[#080808] group-hover:bg-teal-500 transition-colors" />
+
+                    <div className="bg-white dark:bg-[#0a0a0a] border border-neutral-200 dark:border-[#1a1a1a] p-5 rounded-xl space-y-3 hover:border-neutral-300 dark:hover:border-[#2a2a2a] transition-all">
                       <div className="flex flex-wrap items-center justify-between gap-2">
-                        <div className="flex items-center gap-2 text-xs font-bold text-emerald-650 dark:text-emerald-400 font-mono">
-                          <Clock className="w-3.5 h-3.5 text-emerald-500" />
-                          <span>{activity.time}</span>
+                        <div className="flex items-center gap-2 text-xs font-mono font-bold text-teal-700 dark:text-teal-400">
+                          <Clock className="w-3.5 h-3.5 text-teal-500" />
+                          <span>{act.time}</span>
                         </div>
-                        <span className="inline-block text-[9px] font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 uppercase tracking-wide">
-                          {activity.type}
-                        </span>
+                        <CategoryTag color={act.type === 'Oficina' ? 'teal' : act.type === 'Especial' ? 'amber' : 'rose'}>
+                          {act.type}
+                        </CategoryTag>
                       </div>
 
-                      <h4 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white tracking-wide">
-                        {activity.title}
+                      <h4 className="text-sm sm:text-base font-bold text-neutral-900 dark:text-white font-display tracking-tight">
+                        {act.title}
                       </h4>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-[#121212]/80 pt-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-neutral-500 dark:text-neutral-500 border-t border-neutral-100 dark:border-[#1a1a1a] pt-3">
                         <div className="flex items-center gap-1.5">
-                          <MapPin className="w-4 h-4 text-emerald-500 shrink-0" />
-                          <span className="truncate">{activity.location}</span>
+                          <MapPin className="w-3.5 h-3.5 text-teal-500 shrink-0" />
+                          <span className="truncate">{act.location}</span>
                         </div>
                         <div className="flex items-center gap-1.5">
-                          <UserCheck className="w-4 h-4 text-emerald-500 shrink-0" />
-                          <span className="truncate">{activity.speaker}</span>
+                          <UserCheck className="w-3.5 h-3.5 text-teal-500 shrink-0" />
+                          <span className="truncate">{act.speaker}</span>
                         </div>
                       </div>
                     </div>
@@ -490,114 +408,111 @@ export const Homepage: React.FC = () => {
       </section>
 
       
-      <section className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12 border-b border-slate-200 dark:border-[#121212]">
-        <div className="text-center space-y-3">
-          <h2 className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">Guia Rápido</h2>
-          <h3 className="text-3xl font-extrabold text-slate-900 dark:text-white font-outfit">Informações para participantes</h3>
-          <p className="text-slate-650 dark:text-slate-400 text-sm max-w-2xl mx-auto">
-            Descubra os passos necessários para aproveitar ao máximo a semana acadêmica.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
-          <div className="p-5 bg-white dark:bg-[#0c0c0c] border border-slate-200 dark:border-[#1f1f1f] rounded-2xl flex items-start gap-4 shadow-sm dark:shadow-none">
-            <span className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center justify-center font-bold shrink-0 font-mono text-sm">
-              1
-            </span>
-            <div className="space-y-1">
-              <h4 className="text-sm font-bold text-slate-900 dark:text-white tracking-wide">Consulte a programação do evento</h4>
-              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                Navegue pela lista completa de atividades e horários disponíveis na agenda para selecionar as que mais coincidem com sua formação de interesse.
-              </p>
-            </div>
-          </div>
-
-          <div className="p-5 bg-white dark:bg-[#0c0c0c] border border-slate-200 dark:border-[#1f1f1f] rounded-2xl flex items-start gap-4 shadow-sm dark:shadow-none">
-            <span className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center justify-center font-bold shrink-0 font-mono text-sm">
-              2
-            </span>
-            <div className="space-y-1">
-              <h4 className="text-sm font-bold text-slate-900 dark:text-white tracking-wide">Realize sua inscrição nas atividades disponíveis</h4>
-              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                Cadastre-se na área restrita e garanta sua vaga diretamente nas palestras e oficinas desejadas para assegurar a sua participação.
-              </p>
-            </div>
-          </div>
-
-          <div className="p-5 bg-white dark:bg-[#0c0c0c] border border-slate-200 dark:border-[#1f1f1f] rounded-2xl flex items-start gap-4 shadow-sm dark:shadow-none">
-            <span className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center justify-center font-bold shrink-0 font-mono text-sm">
-              3
-            </span>
-            <div className="space-y-1">
-              <h4 className="text-sm font-bold text-slate-900 dark:text-white tracking-wide">Acompanhe sua participação</h4>
-              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                Consulte em seu espaço pessoal os detalhes de horários e locais das atividades nas quais obteve êxito na reserva de vaga.
-              </p>
-            </div>
-          </div>
-
-          <div className="p-5 bg-white dark:bg-[#0c0c0c] border border-slate-200 dark:border-[#1f1f1f] rounded-2xl flex items-start gap-4 shadow-sm dark:shadow-none">
-            <span className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center justify-center font-bold shrink-0 font-mono text-sm">
-              4
-            </span>
-            <div className="space-y-1">
-              <h4 className="text-sm font-bold text-slate-900 dark:text-white tracking-wide">Acesse seus certificados após as atividades</h4>
-              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                Emita os certificados de participação oficiais com chave digital de validação assim que as presenças forem homologadas pela coordenação.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      
-      <section className="py-20 bg-slate-50/50 dark:bg-[#050505]/20 border-b border-slate-200 dark:border-[#121212]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-          <div className="text-center space-y-3">
-            <h2 className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">Comunidade</h2>
-            <h3 className="text-3xl font-extrabold text-slate-900 dark:text-white font-outfit">Quem participa da SITEC</h3>
-            <p className="text-slate-600 dark:text-slate-400 text-sm max-w-2xl mx-auto">
-              Cada perfil desempenha um papel fundamental para enriquecer a experiência de aprendizado e colaboração.
+      <section className="py-20 md:py-28 border-b border-neutral-200 dark:border-[#1a1a1a]">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-14 space-y-4">
+            <SectionLabel number="06" text="guia" />
+            <h3 className="text-3xl sm:text-4xl font-bold text-neutral-900 dark:text-white font-display tracking-tight">
+              Como participar
+            </h3>
+            <p className="text-neutral-500 dark:text-neutral-500 text-sm max-w-lg mx-auto">
+              Quatro passos para aproveitar ao máximo a semana acadêmica.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            <div className="bg-white dark:bg-[#0c0c0c] border border-slate-200 dark:border-[#1f1f1f] p-6 rounded-2xl space-y-4 shadow-md dark:shadow-none hover:border-slate-350 dark:hover:border-[#2f2f2f] transition-all flex flex-col justify-between">
-              <div className="space-y-3">
-                <div className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 rounded-lg uppercase tracking-wider">
-                  <Users className="w-3.5 h-3.5" />
-                  <span>Participantes</span>
+          <div className="space-y-0">
+            {steps.map((step, i) => (
+              <div
+                key={step.n}
+                className={`flex items-start gap-6 sm:gap-8 py-8 ${
+                  i < steps.length - 1 ? 'border-b border-neutral-100 dark:border-[#1a1a1a]' : ''
+                } group`}
+              >
+                <span className="text-4xl sm:text-5xl font-bold font-mono text-neutral-200 dark:text-[#1a1a1a] group-hover:text-teal-500/30 dark:group-hover:text-teal-500/20 transition-colors select-none shrink-0 w-16 text-right">
+                  {step.n}
+                </span>
+                <div className="space-y-2 pt-1">
+                  <h4 className="text-lg font-bold text-neutral-900 dark:text-white font-display tracking-tight">
+                    {step.title}
+                  </h4>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-500 leading-relaxed max-w-lg">
+                    {step.desc}
+                  </p>
                 </div>
-                <h4 className="text-base font-bold text-slate-900 dark:text-white">Discentes & Comunidade</h4>
-                <p className="text-slate-600 dark:text-slate-400 text-xs leading-relaxed">
-                  Acompanham a programação oficial, realizam inscrições nas oficinas práticas, participam de torneios e acessam seus certificados de forma simplificada.
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      
+      <section className="py-20 md:py-28 border-b border-neutral-200 dark:border-[#1a1a1a]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-14 space-y-4">
+            <SectionLabel number="07" text="comunidade" />
+            <h3 className="text-3xl sm:text-4xl font-bold text-neutral-900 dark:text-white font-display tracking-tight">
+              Quem participa da SITEC
+            </h3>
+            <p className="text-neutral-500 dark:text-neutral-500 text-sm max-w-lg mx-auto">
+              Cada perfil contribui para construir uma experiência acadêmica mais completa.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 max-w-5xl mx-auto">
+            
+            <div className="bg-white dark:bg-[#0a0a0a] border border-neutral-200 dark:border-[#1a1a1a] rounded-xl overflow-hidden hover:border-neutral-300 dark:hover:border-[#2a2a2a] transition-all">
+              <div className="h-1 bg-teal-500" />
+              <div className="p-6 space-y-4">
+                <div className="flex items-center gap-3">
+                  <Users className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+                  <h4 className="text-base font-bold text-neutral-900 dark:text-white font-display">Participantes</h4>
+                </div>
+                <p className="text-sm text-neutral-500 dark:text-neutral-500 leading-relaxed">
+                  Estudantes e comunidade que acompanham a programação, realizam inscrições nas oficinas e palestras, participam de competições e acessam certificados.
                 </p>
+                <ul className="space-y-1.5 text-xs text-neutral-400 dark:text-neutral-600">
+                  <li className="flex items-center gap-2"><ChevronRight className="w-3 h-3 text-teal-500" /> Inscrição em atividades</li>
+                  <li className="flex items-center gap-2"><ChevronRight className="w-3 h-3 text-teal-500" /> Certificados digitais</li>
+                  <li className="flex items-center gap-2"><ChevronRight className="w-3 h-3 text-teal-500" /> Torneios e competições</li>
+                </ul>
               </div>
             </div>
 
-            <div className="bg-white dark:bg-[#0c0c0c] border border-slate-200 dark:border-[#1f1f1f] p-6 rounded-2xl space-y-4 shadow-md dark:shadow-none hover:border-slate-350 dark:hover:border-[#2f2f2f] transition-all flex flex-col justify-between">
-              <div className="space-y-3">
-                <div className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 bg-blue-500/10 text-blue-605 dark:text-blue-400 border border-blue-500/20 rounded-lg uppercase tracking-wider">
-                  <GraduationCap className="w-3.5 h-3.5" />
-                  <span>Organizadores</span>
+            
+            <div className="bg-white dark:bg-[#0a0a0a] border border-neutral-200 dark:border-[#1a1a1a] rounded-xl overflow-hidden hover:border-neutral-300 dark:hover:border-[#2a2a2a] transition-all">
+              <div className="h-1 bg-amber-500" />
+              <div className="p-6 space-y-4">
+                <div className="flex items-center gap-3">
+                  <Cpu className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                  <h4 className="text-base font-bold text-neutral-900 dark:text-white font-display">Organizadores</h4>
                 </div>
-                <h4 className="text-base font-bold text-slate-900 dark:text-white">Docentes & Staff</h4>
-                <p className="text-slate-600 dark:text-slate-400 text-xs leading-relaxed">
-                  Acompanham o andamento de cada palestra e oficina, organizam o cronograma de horários e realizam o credenciamento de presença para a emissão oficial.
+                <p className="text-sm text-neutral-500 dark:text-neutral-500 leading-relaxed">
+                  Docentes e equipe técnica que coordenam a programação, acompanham as atividades, registram presenças e homologam certificados.
                 </p>
+                <ul className="space-y-1.5 text-xs text-neutral-400 dark:text-neutral-600">
+                  <li className="flex items-center gap-2"><ChevronRight className="w-3 h-3 text-amber-500" /> Gestão de atividades</li>
+                  <li className="flex items-center gap-2"><ChevronRight className="w-3 h-3 text-amber-500" /> Controle de presenças</li>
+                  <li className="flex items-center gap-2"><ChevronRight className="w-3 h-3 text-amber-500" /> Emissão de certificados</li>
+                </ul>
               </div>
             </div>
 
-            <div className="bg-white dark:bg-[#0c0c0c] border border-slate-200 dark:border-[#1f1f1f] p-6 rounded-2xl space-y-4 shadow-md dark:shadow-none hover:border-slate-350 dark:hover:border-[#2f2f2f] transition-all flex flex-col justify-between">
-              <div className="space-y-3">
-                <div className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 bg-purple-500/10 text-purple-605 dark:text-purple-400 border border-purple-500/20 rounded-lg uppercase tracking-wider">
-                  <UserCheck className="w-3.5 h-3.5" />
-                  <span>Palestrantes</span>
+            
+            <div className="bg-white dark:bg-[#0a0a0a] border border-neutral-200 dark:border-[#1a1a1a] rounded-xl overflow-hidden hover:border-neutral-300 dark:hover:border-[#2a2a2a] transition-all">
+              <div className="h-1 bg-rose-500" />
+              <div className="p-6 space-y-4">
+                <div className="flex items-center gap-3">
+                  <Presentation className="w-5 h-5 text-rose-600 dark:text-rose-400" />
+                  <h4 className="text-base font-bold text-neutral-900 dark:text-white font-display">Palestrantes</h4>
                 </div>
-                <h4 className="text-base font-bold text-slate-900 dark:text-white">Convidados Especiais</h4>
-                <p className="text-slate-600 dark:text-slate-400 text-xs leading-relaxed">
-                  Participam ativamente compartilhando conteúdos valiosos, vivências acadêmicas, tendências profissionais e conduzindo workshops enriquecedores.
+                <p className="text-sm text-neutral-500 dark:text-neutral-500 leading-relaxed">
+                  Profissionais e pesquisadores convidados que compartilham conhecimento, vivências de mercado, tendências e conduzem workshops.
                 </p>
+                <ul className="space-y-1.5 text-xs text-neutral-400 dark:text-neutral-600">
+                  <li className="flex items-center gap-2"><ChevronRight className="w-3 h-3 text-rose-500" /> Palestras e workshops</li>
+                  <li className="flex items-center gap-2"><ChevronRight className="w-3 h-3 text-rose-500" /> Mesas redondas</li>
+                  <li className="flex items-center gap-2"><ChevronRight className="w-3 h-3 text-rose-500" /> Mentorias acadêmicas</li>
+                </ul>
               </div>
             </div>
           </div>
@@ -605,79 +520,94 @@ export const Homepage: React.FC = () => {
       </section>
 
       
-      <section className="py-24 max-w-4xl mx-auto px-4 text-center space-y-8 relative z-10">
-        <h2 className="text-4xl font-extrabold text-slate-900 dark:text-white leading-tight font-outfit">
-          Participe da SITEC
-        </h2>
-        <p className="text-slate-600 dark:text-slate-450 text-base max-w-xl mx-auto leading-relaxed">
-          Explore a programação, acompanhe as atividades e aproveite a experiência do evento.
-        </p>
+      <section className="py-24 md:py-32 relative">
         
-        <div className="flex justify-center gap-4">
-          <a href="#programacao" onClick={handleScrollToProgram}>
-            <Button variant="primary" size="lg" icon={<ArrowRight className="w-5 h-5" />}>
-              Ver programação
-            </Button>
-          </a>
-          {!isAuthenticated && (
-            <Link to="/register">
-              <Button variant="outline" size="lg">
-                Fazer inscrição
+        <div className="absolute inset-0 bg-teal-500/[0.03] dark:bg-teal-500/[0.02]" />
+        <div className="absolute inset-0 dot-grid pointer-events-none opacity-50" />
+
+        <div className="relative max-w-3xl mx-auto px-4 text-center space-y-8">
+          <SectionLabel number="08" text="participe" />
+
+          <h2 className="text-4xl sm:text-5xl font-bold text-neutral-900 dark:text-white font-display tracking-tight leading-tight">
+            Faça parte da SITEC
+          </h2>
+          <p className="text-neutral-500 dark:text-neutral-500 text-base sm:text-lg max-w-xl mx-auto leading-relaxed">
+            Explore a programação, escolha suas atividades, garanta sua vaga e aproveite a experiência completa do evento.
+          </p>
+
+          <div className="flex flex-col sm:flex-row justify-center gap-3 pt-2">
+            <a href="#programacao" onClick={handleScrollToProgram}>
+              <Button variant="primary" size="lg" icon={<ArrowRight className="w-5 h-5" />}>
+                Ver programação
               </Button>
-            </Link>
-          )}
+            </a>
+            {!isAuthenticated && (
+              <Link to="/register">
+                <Button variant="outline" size="lg">
+                  Fazer inscrição
+                </Button>
+              </Link>
+            )}
+          </div>
         </div>
       </section>
 
       
-      <footer className="bg-slate-100 dark:bg-[#050505] border-t border-slate-200 dark:border-[#121212] py-12 text-slate-600 dark:text-slate-400 text-xs font-sans transition-colors duration-300">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+      <footer className="bg-neutral-100 dark:bg-[#080808] border-t border-neutral-200 dark:border-[#1a1a1a] py-14">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-10 mb-10">
+          
           <div className="space-y-3">
-            <span className="text-lg font-extrabold text-slate-900 dark:text-white tracking-wider">SITEC</span>
-            <p className="text-slate-500 dark:text-slate-500 leading-relaxed">
+            <span className="text-xl font-bold text-neutral-900 dark:text-white tracking-wider font-display">SITEC</span>
+            <p className="text-xs text-neutral-500 dark:text-neutral-600 leading-relaxed">
               Semana de Informática, Tecnologia e Integração Acadêmica
             </p>
-            <p className="text-slate-500 dark:text-slate-500 font-bold">
+            <p className="text-xs text-neutral-400 dark:text-neutral-600 font-mono font-medium">
               IFPR Câmpus Paranaguá
             </p>
           </div>
 
+          
           <div className="space-y-3">
-            <h4 className="font-bold text-slate-800 dark:text-white uppercase tracking-wider text-[10px]">Navegação</h4>
-            <ul className="space-y-2">
-              <li>
-                <Link to="/" className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">Início</Link>
-              </li>
-              <li>
-                <Link to="/activities" className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">Atividades</Link>
-              </li>
-              <li>
-                <Link to="/login" className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">Área do Participante</Link>
-              </li>
+            <h4 className="font-bold text-neutral-700 dark:text-neutral-300 uppercase tracking-widest text-[10px] font-mono">Navegação</h4>
+            <ul className="space-y-2 text-xs text-neutral-500 dark:text-neutral-500">
+              <li><Link to="/" className="hover:text-teal-600 dark:hover:text-teal-400 transition-colors">Início</Link></li>
+              <li><Link to="/activities" className="hover:text-teal-600 dark:hover:text-teal-400 transition-colors">Atividades</Link></li>
+              <li><Link to="/login" className="hover:text-teal-600 dark:hover:text-teal-400 transition-colors">Área do Participante</Link></li>
             </ul>
           </div>
 
+          
           <div className="space-y-3">
-            <h4 className="font-bold text-slate-800 dark:text-white uppercase tracking-wider text-[10px]">Contato</h4>
-            <p>E-mail: sitec.paranagua@ifpr.edu.br</p>
-            <p>Tel: (41) 3721-1200</p>
+            <h4 className="font-bold text-neutral-700 dark:text-neutral-300 uppercase tracking-widest text-[10px] font-mono">Contato</h4>
+            <div className="text-xs text-neutral-500 dark:text-neutral-500 space-y-1.5">
+              <p>sitec.paranagua@ifpr.edu.br</p>
+              <p>(41) 3721-1200</p>
+            </div>
           </div>
 
+          
           <div className="space-y-3">
-            <h4 className="font-bold text-slate-800 dark:text-white uppercase tracking-wider text-[10px]">Câmpus Paranaguá</h4>
-            <p className="leading-relaxed">
-              Rua Antônio Carlos Rodrigues, 453 - Porto Seguro, Paranaguá - PR, CEP 83215-750.
+            <h4 className="font-bold text-neutral-700 dark:text-neutral-300 uppercase tracking-widest text-[10px] font-mono">Câmpus</h4>
+            <p className="text-xs text-neutral-500 dark:text-neutral-500 leading-relaxed">
+              Rua Antônio Carlos Rodrigues, 453
+              <br />
+              Porto Seguro, Paranaguá — PR
+              <br />
+              CEP 83215-750
             </p>
           </div>
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-t border-slate-200 dark:border-slate-900/60 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-slate-550 dark:text-slate-500">
-          <p>© {new Date().getFullYear()} SITEC - IFPR Câmpus Paranaguá. Todos os direitos reservados.</p>
-          <div className="flex gap-4">
-            <a href="https://paranagua.ifpr.edu.br" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-650 dark:hover:text-emerald-400 transition-colors">
+        
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-t border-neutral-200 dark:border-[#1a1a1a] pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p className="text-[11px] font-mono text-neutral-400 dark:text-neutral-600">
+            © {new Date().getFullYear()} SITEC — IFPR Câmpus Paranaguá
+          </p>
+          <div className="flex gap-5 text-xs text-neutral-400 dark:text-neutral-600">
+            <a href="https://paranagua.ifpr.edu.br" target="_blank" rel="noopener noreferrer" className="hover:text-teal-600 dark:hover:text-teal-400 transition-colors">
               Página do Câmpus
             </a>
-            <a href="https://ifpr.edu.br" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-655 dark:hover:text-emerald-400 transition-colors">
+            <a href="https://ifpr.edu.br" target="_blank" rel="noopener noreferrer" className="hover:text-teal-600 dark:hover:text-teal-400 transition-colors">
               Portal IFPR
             </a>
           </div>

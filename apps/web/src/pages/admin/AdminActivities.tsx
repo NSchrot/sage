@@ -119,12 +119,13 @@ export const AdminActivities: React.FC = () => {
 
       {loading ? (
         <div className="flex items-center justify-center min-h-[30vh]">
-          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-emerald-500"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-teal-500"></div>
         </div>
+      ) : error ? (
         <Card variant="default" className="text-center py-10">
           <AlertCircle className="w-12 h-12 text-rose-500 mx-auto mb-4" />
-          <h3 className="text-base font-bold text-slate-900 dark:text-white">Falha ao buscar atividades</h3>
-          <p className="text-xs text-slate-605 dark:text-slate-400 mt-2">{error}</p>
+          <h3 className="text-base font-bold text-neutral-900 dark:text-white">Falha ao buscar atividades</h3>
+          <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-2">{error}</p>
         </Card>
       ) : activities.length === 0 ? (
         <Card variant="default" className="text-center py-12">

@@ -144,7 +144,7 @@ export const MatchBracket: React.FC = () => {
       </div>
 
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center bg-slate-50 dark:bg-[#060a12] p-6 sm:p-8 rounded-3xl border border-slate-150 dark:border-slate-900 relative">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center bg-neutral-50 dark:bg-[#0a0a0a] p-6 sm:p-8 rounded-3xl border border-neutral-200 dark:border-[#1a1a1a] relative">
         
         <div className="hidden md:block absolute inset-0 opacity-10 pointer-events-none" />
 

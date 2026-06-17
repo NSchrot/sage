@@ -32,15 +32,15 @@ export const Recovery: React.FC = () => {
   return (
     <>
       <Navbar />
-      <div className="min-h-[80vh] flex items-center justify-center px-4 py-12">
-        <Card variant="glow" className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl relative overflow-hidden">
+      <div className="min-h-[80vh] flex items-center justify-center px-4 py-12 bg-neutral-50 dark:bg-[#050505] transition-colors duration-300">
+        <Card variant="glow" className="w-full max-w-md bg-white dark:bg-[#0a0a0a] border border-neutral-200 dark:border-[#1a1a1a] rounded-2xl p-8 shadow-2xl relative overflow-hidden">
           <div className="relative">
             <div className="text-center mb-8">
-              <h1 className="text-2xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent font-outfit">
+              <h1 className="text-2xl font-extrabold tracking-tight text-neutral-900 dark:text-white font-display">
                 Recuperar Senha
               </h1>
               <p className="text-xs text-slate-400 mt-2">
-                Informe seu e-mail cadastrado para receber as instruções de acesso da SITEC.
+                Informe seu e-mail cadastrado para receber as instruções de acesso.
               </p>
             </div>
 

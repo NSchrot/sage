@@ -17,14 +17,14 @@ export const Button: React.FC<ButtonProps> = ({
   className = '',
   ...props
 }) => {
-  const baseStyles = 'inline-flex items-center justify-center font-medium rounded-xl transition-all outline-none focus:ring-2 focus:ring-emerald-500/40 disabled:opacity-50 disabled:cursor-not-allowed gap-2';
+  const baseStyles = 'inline-flex items-center justify-center font-medium rounded-xl transition-all outline-none focus:ring-2 focus:ring-teal-500/40 disabled:opacity-50 disabled:cursor-not-allowed gap-2 cursor-pointer';
   
   const variants = {
-    primary: 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/15 border border-emerald-500/20',
-    secondary: 'bg-slate-850 hover:bg-slate-800 text-slate-200 border border-slate-800 hover:border-slate-700',
-    danger: 'bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20',
-    outline: 'border border-slate-800 hover:border-slate-700 text-slate-300 hover:bg-slate-900/60 hover:text-white',
-    ghost: 'text-slate-400 hover:text-white hover:bg-slate-900',
+    primary: 'bg-teal-600 hover:bg-teal-500 text-white shadow-lg shadow-teal-600/15 border border-teal-500/30',
+    secondary: 'bg-neutral-100 dark:bg-neutral-900 hover:bg-neutral-200 dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-200 border border-neutral-200 dark:border-neutral-800',
+    danger: 'bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/20',
+    outline: 'border border-neutral-300 dark:border-neutral-700 hover:border-neutral-400 dark:hover:border-neutral-600 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-900 hover:text-neutral-900 dark:hover:text-white',
+    ghost: 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800/60',
   };
 
   const sizes = {
