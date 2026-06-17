@@ -7,6 +7,9 @@ const client_1 = require("@prisma/client");
 function isWriteConflict(error) {
     return typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2034';
 }
+function generateCertificateCode(enrollmentId) {
+    return `SAGE-${enrollmentId.slice(0, 8).toUpperCase()}-${Date.now().toString(36).toUpperCase()}`;
+}
 async function activitiesRoutes(fastify) {
     fastify.get('/activities', async (request, reply) => {
         try {
@@ -76,10 +79,14 @@ async function activitiesRoutes(fastify) {
             location: zod_1.z.string().min(2, 'O local é obrigatório'),
             startsAt: zod_1.z.string().transform(val => new Date(val)),
             endsAt: zod_1.z.string().transform(val => new Date(val)),
+            registrationDeadline: zod_1.z.string().transform(val => new Date(val)).optional(),
             capacity: zod_1.z.number().int().min(1, 'A capacidade deve ser de pelo menos 1 vaga'),
         }).refine(data => data.endsAt > data.startsAt, {
             message: 'A data de fim deve ser posterior à data de início',
             path: ['endsAt']
+        }).refine(data => !data.registrationDeadline || data.registrationDeadline <= data.startsAt, {
+            message: 'O prazo de inscrição deve ser anterior ou igual ao início da atividade',
+            path: ['registrationDeadline']
         });
         const validation = activitySchema.safeParse(request.body);
         if (!validation.success) {
@@ -89,6 +96,7 @@ async function activitiesRoutes(fastify) {
             });
         }
         const { title, description, location, startsAt, endsAt, capacity } = validation.data;
+        const registrationDeadline = validation.data.registrationDeadline ?? startsAt;
         const userId = request.user.sub;
         try {
             const activity = await prisma_1.prisma.activity.create({
@@ -98,6 +106,7 @@ async function activitiesRoutes(fastify) {
                     location,
                     startsAt,
                     endsAt,
+                    registrationDeadline,
                     capacity,
                     createdById: userId,
                 }
@@ -125,10 +134,14 @@ async function activitiesRoutes(fastify) {
             location: zod_1.z.string().min(2, 'O local é obrigatório'),
             startsAt: zod_1.z.string().transform(val => new Date(val)),
             endsAt: zod_1.z.string().transform(val => new Date(val)),
+            registrationDeadline: zod_1.z.string().transform(val => new Date(val)).optional(),
             capacity: zod_1.z.number().int().min(1, 'A capacidade deve ser de pelo menos 1 vaga'),
         }).refine(data => data.endsAt > data.startsAt, {
             message: 'A data de fim deve ser posterior à data de início',
             path: ['endsAt']
+        }).refine(data => !data.registrationDeadline || data.registrationDeadline <= data.startsAt, {
+            message: 'O prazo de inscrição deve ser anterior ou igual ao início da atividade',
+            path: ['registrationDeadline']
         });
         const validation = activitySchema.safeParse(request.body);
         if (!validation.success) {
@@ -139,6 +152,7 @@ async function activitiesRoutes(fastify) {
         }
         const { id } = paramsValidation.data;
         const { title, description, location, startsAt, endsAt, capacity } = validation.data;
+        const registrationDeadline = validation.data.registrationDeadline ?? startsAt;
         const userId = request.user.sub;
         try {
             const activity = await prisma_1.prisma.activity.findUnique({
@@ -166,6 +180,7 @@ async function activitiesRoutes(fastify) {
                     location,
                     startsAt,
                     endsAt,
+                    registrationDeadline,
                     capacity,
                 }
             });
@@ -235,6 +250,9 @@ async function activitiesRoutes(fastify) {
                         });
                         if (!activity) {
                             return { status: 404, body: { message: 'Atividade não encontrada.' } };
+                        }
+                        if (new Date() > activity.registrationDeadline) {
+                            return { status: 400, body: { message: 'O prazo de inscrição desta atividade já foi encerrado.' } };
                         }
                         if (activity.enrollments.length >= activity.capacity) {
                             return { status: 400, body: { message: 'Esta atividade não possui vagas disponíveis.' } };
@@ -319,6 +337,16 @@ async function activitiesRoutes(fastify) {
             });
             if (!existingEnrollment || existingEnrollment.status === client_1.EnrollmentStatus.CANCELADA) {
                 return reply.status(400).send({ message: 'Inscrição não encontrada ou já cancelada.' });
+            }
+            const activity = await prisma_1.prisma.activity.findUnique({
+                where: { id: activityId },
+                select: { registrationDeadline: true }
+            });
+            if (!activity) {
+                return reply.status(404).send({ message: 'Atividade não encontrada.' });
+            }
+            if (new Date() > activity.registrationDeadline) {
+                return reply.status(400).send({ message: 'O prazo para cancelar esta inscrição já foi encerrado.' });
             }
             const updatedEnrollment = await prisma_1.prisma.enrollment.update({
                 where: { id: existingEnrollment.id },
@@ -408,6 +436,105 @@ async function activitiesRoutes(fastify) {
         catch (error) {
             fastify.log.error(error);
             return reply.status(500).send({ message: 'Erro ao buscar suas inscrições.' });
+        }
+    });
+    fastify.patch('/enrollments/:id/attendance', {
+        preHandler: [fastify.onlyRole(client_1.UserRole.ORGANIZADOR)]
+    }, async (request, reply) => {
+        const paramsSchema = zod_1.z.object({
+            id: zod_1.z.string().uuid(),
+        });
+        const bodySchema = zod_1.z.object({
+            present: zod_1.z.boolean(),
+        });
+        const paramsValidation = paramsSchema.safeParse(request.params);
+        if (!paramsValidation.success) {
+            return reply.status(400).send({ message: 'ID de inscrição inválido.' });
+        }
+        const bodyValidation = bodySchema.safeParse(request.body);
+        if (!bodyValidation.success) {
+            return reply.status(400).send({
+                message: 'Dados de validação incorretos',
+                errors: bodyValidation.error.flatten().fieldErrors
+            });
+        }
+        const { id } = paramsValidation.data;
+        const { present } = bodyValidation.data;
+        const userId = request.user.sub;
+        try {
+            const enrollment = await prisma_1.prisma.enrollment.findUnique({
+                where: { id },
+                include: { activity: true }
+            });
+            if (!enrollment) {
+                return reply.status(404).send({ message: 'Inscrição não encontrada.' });
+            }
+            if (enrollment.activity.createdById !== userId) {
+                return reply.status(403).send({ message: 'Você não tem permissão para homologar presença nesta atividade.' });
+            }
+            const updatedEnrollment = await prisma_1.prisma.enrollment.update({
+                where: { id },
+                data: {
+                    attendanceConfirmedAt: present ? new Date() : null,
+                    certificateIssuedAt: present ? enrollment.certificateIssuedAt : null,
+                    certificateCode: present ? enrollment.certificateCode : null,
+                },
+                include: {
+                    user: {
+                        select: { id: true, name: true, email: true }
+                    }
+                }
+            });
+            return reply.send(updatedEnrollment);
+        }
+        catch (error) {
+            fastify.log.error(error);
+            return reply.status(500).send({ message: 'Erro ao homologar presença.' });
+        }
+    });
+    fastify.post('/enrollments/:id/certificate', {
+        preHandler: [fastify.onlyRole(client_1.UserRole.ORGANIZADOR)]
+    }, async (request, reply) => {
+        const paramsSchema = zod_1.z.object({
+            id: zod_1.z.string().uuid(),
+        });
+        const paramsValidation = paramsSchema.safeParse(request.params);
+        if (!paramsValidation.success) {
+            return reply.status(400).send({ message: 'ID de inscrição inválido.' });
+        }
+        const { id } = paramsValidation.data;
+        const userId = request.user.sub;
+        try {
+            const enrollment = await prisma_1.prisma.enrollment.findUnique({
+                where: { id },
+                include: { activity: true }
+            });
+            if (!enrollment) {
+                return reply.status(404).send({ message: 'Inscrição não encontrada.' });
+            }
+            if (enrollment.activity.createdById !== userId) {
+                return reply.status(403).send({ message: 'Você não tem permissão para emitir certificado nesta atividade.' });
+            }
+            if (!enrollment.attendanceConfirmedAt) {
+                return reply.status(400).send({ message: 'Confirme a presença antes de emitir o certificado.' });
+            }
+            const updatedEnrollment = await prisma_1.prisma.enrollment.update({
+                where: { id },
+                data: {
+                    certificateIssuedAt: enrollment.certificateIssuedAt ?? new Date(),
+                    certificateCode: enrollment.certificateCode ?? generateCertificateCode(enrollment.id),
+                },
+                include: {
+                    user: {
+                        select: { id: true, name: true, email: true }
+                    }
+                }
+            });
+            return reply.send(updatedEnrollment);
+        }
+        catch (error) {
+            fastify.log.error(error);
+            return reply.status(500).send({ message: 'Erro ao emitir certificado.' });
         }
     });
 }

@@ -15,6 +15,7 @@ export const CreateActivity: React.FC = () => {
   const [location, setLocation] = useState('');
   const [startsAt, setStartsAt] = useState('');
   const [endsAt, setEndsAt] = useState('');
+  const [registrationDeadline, setRegistrationDeadline] = useState('');
   const [capacity, setCapacity] = useState<number>(30);
   
   const [loading, setLoading] = useState(false);
@@ -53,6 +54,7 @@ export const CreateActivity: React.FC = () => {
         setCapacity(data.capacity);
         setStartsAt(formatISOToInput(data.startsAt));
         setEndsAt(formatISOToInput(data.endsAt));
+        setRegistrationDeadline(formatISOToInput(data.registrationDeadline ?? data.startsAt));
       } catch (err: any) {
         setError(err.message || 'Erro ao carregar detalhes.');
       } finally {
@@ -76,6 +78,12 @@ export const CreateActivity: React.FC = () => {
       return;
     }
 
+    if (new Date(registrationDeadline) > new Date(startsAt)) {
+      setError('O prazo de inscrição deve ser anterior ou igual ao início da atividade.');
+      setLoading(false);
+      return;
+    }
+
     try {
       const url = isEditMode
         ? `${import.meta.env.VITE_API_URL}/activities/${id}`
@@ -95,6 +103,7 @@ export const CreateActivity: React.FC = () => {
           location,
           startsAt: new Date(startsAt).toISOString(),
           endsAt: new Date(endsAt).toISOString(),
+          registrationDeadline: new Date(registrationDeadline).toISOString(),
           capacity: Number(capacity)
         })
       });
@@ -188,6 +197,23 @@ export const CreateActivity: React.FC = () => {
             />
           </div>
 
+          <div className="space-y-1.5">
+            <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+              <Calendar className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              Prazo para Inscrição e Cancelamento
+            </label>
+            <input
+              type="datetime-local"
+              required
+              value={registrationDeadline}
+              onChange={(e) => setRegistrationDeadline(e.target.value)}
+              className="w-full bg-white dark:bg-[#040404] border border-slate-255 dark:border-[#1f1f1f] focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-slate-700 dark:text-slate-300 px-4 py-2.5 rounded-xl text-sm transition-all outline-none"
+            />
+            <p className="text-[11px] text-slate-500 dark:text-slate-500">
+              Após este horário, novas inscrições e cancelamentos ficam bloqueados.
+            </p>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-1.5">
               <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
@@ -198,7 +224,12 @@ export const CreateActivity: React.FC = () => {
                 type="datetime-local"
                 required
                 value={startsAt}
-                onChange={(e) => setStartsAt(e.target.value)}
+                onChange={(e) => {
+                  setStartsAt(e.target.value);
+                  if (!registrationDeadline) {
+                    setRegistrationDeadline(e.target.value);
+                  }
+                }}
                 className="w-full bg-white dark:bg-[#040404] border border-slate-255 dark:border-[#1f1f1f] focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-slate-700 dark:text-slate-300 px-4 py-2.5 rounded-xl text-sm transition-all outline-none"
               />
             </div>

@@ -38,6 +38,7 @@ model Activity {
   location    String
   startsAt    DateTime
   endsAt      DateTime
+  registrationDeadline DateTime
   capacity    Int
   createdById String
   creator     User         @relation("UserActivities", fields: [createdById], references: [id], onDelete: Cascade)
@@ -55,6 +56,9 @@ model Enrollment {
   activityId String
   activity   Activity         @relation(fields: [activityId], references: [id], onDelete: Cascade)
   status     EnrollmentStatus @default(ATIVA)
+  attendanceConfirmedAt DateTime?
+  certificateIssuedAt   DateTime?
+  certificateCode       String?          @unique
   createdAt  DateTime         @default(now())
 
   @@unique([userId, activityId])

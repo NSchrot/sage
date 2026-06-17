@@ -8,6 +8,9 @@ import { Badge } from '../../components/common/Badge';
 interface Enrollment {
   id: string;
   status: 'ATIVA' | 'CANCELADA';
+  attendanceConfirmedAt?: string | null;
+  certificateIssuedAt?: string | null;
+  certificateCode?: string | null;
   activity: {
     id: string;
     title: string;
@@ -30,10 +33,10 @@ export const Certificates: React.FC = () => {
         });
         if (res.ok) {
           const data = await res.json();
-          const active = data.filter((e: any) => e.status === 'ATIVA');
-          setCompletedEnrollments(active);
-          if (active.length > 0) {
-            setSelectedCert(active[0]);
+          const issuedCertificates = data.filter((e: any) => e.status === 'ATIVA' && e.certificateIssuedAt);
+          setCompletedEnrollments(issuedCertificates);
+          if (issuedCertificates.length > 0) {
+            setSelectedCert(issuedCertificates[0]);
           }
         }
       } catch (err) {
@@ -94,7 +97,7 @@ export const Certificates: React.FC = () => {
                       <span>{new Date(enroll.activity.startsAt).toLocaleDateString('pt-BR')}</span>
                     </div>
                   </div>
-                  <Badge variant={selectedCert?.id === enroll.id ? 'success' : 'neutral'}>Ativo</Badge>
+                  <Badge variant={selectedCert?.id === enroll.id ? 'success' : 'neutral'}>Emitido</Badge>
                 </button>
               ))}
             </div>
@@ -110,8 +113,8 @@ export const Certificates: React.FC = () => {
                     <Button variant="outline" size="sm" icon={<Printer className="w-4 h-4" />} onClick={handlePrint}>
                       Imprimir
                     </Button>
-                    <Button variant="primary" size="sm" icon={<Download className="w-4 h-4" />} onClick={() => alert('Certificado baixado como PDF simulado!')}>
-                      Download PDF
+                    <Button variant="primary" size="sm" icon={<Download className="w-4 h-4" />} onClick={handlePrint}>
+                      Salvar PDF
                     </Button>
                   </div>
                 </div>
@@ -162,7 +165,7 @@ export const Certificates: React.FC = () => {
                         <span>Homologado</span>
                       </div>
                       <span className="text-[8px] text-slate-500 font-mono tracking-tighter truncate max-w-[150px] print:text-slate-600">
-                        SHA256: {selectedCert.id.substring(0, 8).toUpperCase()}-SITEC-IFPR
+                        Código: {selectedCert.certificateCode ?? selectedCert.id.substring(0, 8).toUpperCase()}
                       </span>
                     </div>
                   </div>

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { Calendar, MapPin, Users, ArrowLeft, AlertCircle, CheckCircle2, ClipboardList, Info, Mail } from 'lucide-react';
+import { Calendar, MapPin, Users, ArrowLeft, AlertCircle, CheckCircle2, ClipboardList, Info, Mail, Award } from 'lucide-react';
 import { LayoutAutenticado } from '../../components/layout/LayoutAutenticado';
 import { Navbar } from '../../components/Navbar';
 import { Card } from '../../components/common/Card';
@@ -15,6 +15,7 @@ interface Activity {
   location: string;
   startsAt: string;
   endsAt: string;
+  registrationDeadline: string;
   capacity: number;
   createdById: string;
   _count: {
@@ -29,6 +30,9 @@ interface Activity {
 interface Enrollment {
   id: string;
   createdAt: string;
+  attendanceConfirmedAt?: string | null;
+  certificateIssuedAt?: string | null;
+  certificateCode?: string | null;
   user: {
     id: string;
     name: string;
@@ -145,6 +149,52 @@ export const ActivityDetail: React.FC = () => {
     }
   };
 
+  const handleToggleAttendance = async (enrollment: Enrollment) => {
+    if (!token) return;
+
+    setActionError(null);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/enrollments/${enrollment.id}/attendance`, {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ present: !enrollment.attendanceConfirmedAt })
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || 'Erro ao homologar presença.');
+      }
+
+      setEnrollments(prev => prev.map(item => item.id === data.id ? data : item));
+    } catch (err: any) {
+      setActionError(err.message);
+    }
+  };
+
+  const handleIssueCertificate = async (enrollment: Enrollment) => {
+    if (!token) return;
+
+    setActionError(null);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/enrollments/${enrollment.id}/certificate`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || 'Erro ao emitir certificado.');
+      }
+
+      setEnrollments(prev => prev.map(item => item.id === data.id ? data : item));
+    } catch (err: any) {
+      setActionError(err.message);
+    }
+  };
+
   const formatDateTime = (dateString: string) => {
     return new Date(dateString).toLocaleString('pt-BR', {
       weekday: 'long',
@@ -184,6 +234,7 @@ export const ActivityDetail: React.FC = () => {
   const spotsLeft = Math.max(0, activity.capacity - activeEnrollments);
   const isFull = spotsLeft === 0;
   const isCreator = user?.id === activity.createdById;
+  const enrollmentClosed = new Date() > new Date(activity.registrationDeadline);
 
   const pageBody = (
     <div className={`${!isAuthenticated ? 'max-w-5xl mx-auto px-4 sm:px-6 py-10' : 'space-y-6'}`}>
@@ -266,6 +317,19 @@ export const ActivityDetail: React.FC = () => {
                 </div>
               </div>
 
+              <div className="flex gap-3 text-xs">
+                <Calendar className="w-5 h-5 text-emerald-500 dark:text-emerald-400 shrink-0 mt-0.5" />
+                <div>
+                  <span className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Prazo de Inscrição</span>
+                  <div className="text-slate-800 dark:text-slate-200 font-semibold mt-0.5 flex flex-wrap gap-x-2 gap-y-1 items-center">
+                    <span>{formatDateTime(activity.registrationDeadline)}</span>
+                    <Badge variant={enrollmentClosed ? 'danger' : 'success'}>
+                      {enrollmentClosed ? 'Encerrado' : 'Aberto'}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+
               
               <div className="pt-4 border-t border-slate-800/80">
                 {isParticipant && (
@@ -279,19 +343,20 @@ export const ActivityDetail: React.FC = () => {
                         <Button
                           variant="danger"
                           className="w-full text-xs font-semibold py-2.5"
+                          disabled={enrollmentClosed}
                           onClick={handleCancelEnrollment}
                         >
-                          Cancelar Inscrição
+                          {enrollmentClosed ? 'Cancelamento Encerrado' : 'Cancelar Inscrição'}
                         </Button>
                       </div>
                     ) : (
                       <Button
                         variant="primary"
-                        disabled={isFull}
+                        disabled={isFull || enrollmentClosed}
                         className="w-full text-xs font-semibold py-2.5"
                         onClick={handleEnroll}
                       >
-                        {isFull ? 'Sem Vagas' : 'Realizar Inscrição'}
+                        {enrollmentClosed ? 'Inscrições Encerradas' : isFull ? 'Sem Vagas' : 'Realizar Inscrição'}
                       </Button>
                     )}
                   </>
@@ -348,6 +413,8 @@ export const ActivityDetail: React.FC = () => {
                   <tr className="border-b border-slate-850 text-slate-500 text-xs font-bold uppercase tracking-wider">
                     <th className="pb-3 pl-4">Nome</th>
                     <th className="pb-3">E-mail</th>
+                    <th className="pb-3">Presença</th>
+                    <th className="pb-3">Certificado</th>
                     <th className="pb-3 pr-4 text-right">Inscrito em</th>
                   </tr>
                 </thead>
@@ -358,6 +425,27 @@ export const ActivityDetail: React.FC = () => {
                       <td className="py-3.5 text-slate-400 flex items-center gap-1.5">
                         <Mail className="w-3.5 h-3.5" />
                         {enroll.user.email}
+                      </td>
+                      <td className="py-3.5">
+                        <Button
+                          variant={enroll.attendanceConfirmedAt ? 'secondary' : 'outline'}
+                          size="sm"
+                          icon={<CheckCircle2 className="w-3.5 h-3.5" />}
+                          onClick={() => handleToggleAttendance(enroll)}
+                        >
+                          {enroll.attendanceConfirmedAt ? 'Presente' : 'Confirmar'}
+                        </Button>
+                      </td>
+                      <td className="py-3.5">
+                        <Button
+                          variant={enroll.certificateIssuedAt ? 'secondary' : 'primary'}
+                          size="sm"
+                          disabled={!enroll.attendanceConfirmedAt}
+                          icon={<Award className="w-3.5 h-3.5" />}
+                          onClick={() => handleIssueCertificate(enroll)}
+                        >
+                          {enroll.certificateIssuedAt ? 'Emitido' : 'Emitir'}
+                        </Button>
                       </td>
                       <td className="py-3.5 pr-4 text-right text-slate-400">
                         {new Date(enroll.createdAt).toLocaleDateString('pt-BR')} {new Date(enroll.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
