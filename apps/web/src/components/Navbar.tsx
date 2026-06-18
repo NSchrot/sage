@@ -21,7 +21,7 @@ export const Navbar: React.FC = () => {
   return (
     <nav className="sticky top-0 z-50 bg-white/80 dark:bg-[#050505]/85 backdrop-blur-xl border-b border-neutral-200 dark:border-[#1a1a1a] px-4 sm:px-6 py-3.5 transition-all">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
-        
+
         <Link to="/" className="flex items-center gap-2.5 group">
           <div className="flex flex-col">
             <span className="text-lg font-bold tracking-wider text-neutral-900 dark:text-white font-display">SITEC</span>
@@ -31,33 +31,9 @@ export const Navbar: React.FC = () => {
           </div>
         </Link>
 
-        
-        <div className="hidden sm:flex items-center gap-6">
-          <Link
-            to="/"
-            className={`text-sm font-medium transition-colors ${
-              isActive('/')
-                ? 'text-teal-600 dark:text-teal-400'
-                : 'text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-200'
-            }`}
-          >
-            Início
-          </Link>
-          <Link
-            to="/activities"
-            className={`text-sm font-medium transition-colors ${
-              isActive('/activities')
-                ? 'text-teal-600 dark:text-teal-400'
-                : 'text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-200'
-            }`}
-          >
-            Atividades
-          </Link>
-        </div>
 
-        
         <div className="flex items-center gap-3">
-          
+
           <button
             onClick={toggleTheme}
             className="p-2 rounded-xl text-neutral-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-white bg-neutral-100 dark:bg-[#0a0a0a] border border-neutral-200 dark:border-[#1a1a1a] transition-all cursor-pointer"
