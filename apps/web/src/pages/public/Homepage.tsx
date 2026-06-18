@@ -156,12 +156,12 @@ export const Homepage: React.FC = () => {
   const lectureCount = activities.filter(activity => getActivityType(activity) === 'Palestra').length;
 
   const highlights = [
-    { title: 'Oficinas Práticas', desc: 'Laboratórios hands-on focados em desenvolvimento, novas linguagens e ferramentas essenciais do setor tecnológico.', tag: 'oficina', color: 'teal' as const, wide: true },
-    { title: 'Palestras Convidadas', desc: 'Diálogos com profissionais e pesquisadores sobre tendências, carreira e inovação no cenário tecnológico atual.', tag: 'palestra', color: 'amber' as const, wide: false },
-    { title: 'Certificação Digital', desc: 'Emissão eletrônica de certificados oficiais com carga horária reconhecida para atividades complementares.', tag: 'certificado', color: 'teal' as const, wide: false },
-    { title: 'Torneios e Competições', desc: 'Maratonas de programação, desafios lógicos e competições acadêmicas entre equipes de estudantes.', tag: 'torneio', color: 'rose' as const, wide: true },
-    { title: 'Mostra de Trabalhos', desc: 'Espaço para apresentação de projetos acadêmicos, pesquisas e trabalhos de conclusão de curso.', tag: 'acadêmico', color: 'amber' as const, wide: false },
-    { title: 'Integração Acadêmica', desc: 'Atividades de socialização, networking e troca de experiências entre estudantes, docentes e comunidade.', tag: 'integração', color: 'teal' as const, wide: false },
+    { title: 'Oficinas Práticas', desc: 'Laboratórios hands-on focados em desenvolvimento, novas linguagens e ferramentas essenciais do setor tecnológico.', tag: 'oficina', color: 'teal' as const },
+    { title: 'Palestras Convidadas', desc: 'Diálogos com profissionais e pesquisadores sobre tendências, carreira e inovação no cenário tecnológico atual.', tag: 'palestra', color: 'amber' as const },
+    { title: 'Certificação Digital', desc: 'Emissão eletrônica de certificados oficiais com carga horária reconhecida para atividades complementares.', tag: 'certificado', color: 'teal' as const },
+    { title: 'Torneios e Competições', desc: 'Maratonas de programação, desafios lógicos e competições acadêmicas entre equipes de estudantes.', tag: 'torneio', color: 'rose' as const },
+    { title: 'Mostra de Trabalhos', desc: 'Espaço para apresentação de projetos acadêmicos, pesquisas e trabalhos de conclusão de curso.', tag: 'acadêmico', color: 'amber' as const },
+    { title: 'Integração Acadêmica', desc: 'Atividades de socialização, networking e troca de experiências entre estudantes, docentes e comunidade.', tag: 'integração', color: 'teal' as const },
   ];
 
   const steps = [
@@ -364,26 +364,33 @@ export const Homepage: React.FC = () => {
           </div>
 
           
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-4 sm:gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5">
             {highlights.map((h, i) => (
               <div
                 key={i}
-                className={`${h.wide ? 'md:col-span-7' : 'md:col-span-5'}
-                  bg-white dark:bg-[#0a0a0a] border border-neutral-200 dark:border-[#1a1a1a] rounded-xl p-6
-                  border-l-2 ${
-                    h.color === 'teal' ? 'border-l-teal-500' :
-                    h.color === 'amber' ? 'border-l-amber-500' :
-                    'border-l-rose-500'
-                  }
-                  hover:border-neutral-300 dark:hover:border-[#2a2a2a] transition-all group`}
+                className="relative overflow-hidden min-h-48 bg-white dark:bg-[#0a0a0a] border border-neutral-200 dark:border-[#1a1a1a] rounded-xl p-6 hover:border-neutral-300 dark:hover:border-[#2a2a2a] transition-all group"
               >
-                <CategoryTag color={h.color}>// {h.tag}</CategoryTag>
-                <h4 className="text-lg font-bold text-neutral-900 dark:text-white font-display mt-3 tracking-tight">
-                  {h.title}
-                </h4>
-                <p className="text-sm text-neutral-500 dark:text-neutral-500 mt-2 leading-relaxed">
-                  {h.desc}
-                </p>
+                <span
+                  className={`absolute inset-x-0 top-0 h-0.5 ${
+                    h.color === 'teal' ? 'bg-teal-500' :
+                    h.color === 'amber' ? 'bg-amber-500' :
+                    'bg-rose-500'
+                  }`}
+                />
+                <div className="flex items-start justify-between gap-4">
+                  <CategoryTag color={h.color}>// {h.tag}</CategoryTag>
+                  <span className="font-mono text-[11px] font-bold text-neutral-300 dark:text-neutral-800 group-hover:text-neutral-400 dark:group-hover:text-neutral-700 transition-colors">
+                    {String(i + 1).padStart(2, '0')}
+                  </span>
+                </div>
+                <div className="mt-8 space-y-3">
+                  <h4 className="text-lg font-bold text-neutral-900 dark:text-white font-display tracking-tight">
+                    {h.title}
+                  </h4>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-500 leading-relaxed">
+                    {h.desc}
+                  </p>
+                </div>
               </div>
             ))}
           </div>
