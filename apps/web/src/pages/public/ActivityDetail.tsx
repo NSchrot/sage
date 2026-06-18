@@ -325,6 +325,85 @@ export const ActivityDetail: React.FC = () => {
   const enrollmentClosed = new Date() > new Date(activity.registrationDeadline);
   const pendingCertificatesCount = enrollments.filter(enroll => enroll.attendanceConfirmedAt && !enroll.certificateIssuedAt).length;
 
+  const participantsCard = isOrganizer && isCreator ? (
+    <Card
+      variant="default"
+      title={
+        <div className="flex items-center gap-2">
+          <ClipboardList className="w-5 h-5 text-emerald-400" />
+          <span>Participantes Inscritos ({enrollments.length})</span>
+        </div>
+      }
+      actions={
+        <Button
+          variant="primary"
+          size="sm"
+          icon={<Award className="w-3.5 h-3.5" />}
+          loading={bulkCertificateLoading}
+          disabled={pendingCertificatesCount === 0}
+          onClick={handleIssueAllCertificates}
+        >
+          Emitir presentes ({pendingCertificatesCount})
+        </Button>
+      }
+    >
+      {enrollments.length === 0 ? (
+        <div className="p-8 bg-slate-950 border border-slate-850 rounded-xl text-center text-slate-500 text-xs font-medium">
+          Nenhum aluno se inscreveu nesta atividade ainda.
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-slate-850 text-slate-500 text-xs font-bold uppercase tracking-wider">
+                <th className="pb-3 pl-4">Nome</th>
+                <th className="pb-3">E-mail</th>
+                <th className="pb-3">Presença</th>
+                <th className="pb-3">Certificado</th>
+                <th className="pb-3 pr-4 text-right">Inscrito em</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-850 text-xs text-slate-200">
+              {enrollments.map((enroll) => (
+                <tr key={enroll.id} className="hover:bg-slate-850/30 transition-colors">
+                  <td className="py-3.5 pl-4 font-bold">{enroll.user.name}</td>
+                  <td className="py-3.5 text-slate-400 flex items-center gap-1.5">
+                    <Mail className="w-3.5 h-3.5" />
+                    {enroll.user.email}
+                  </td>
+                  <td className="py-3.5">
+                    <Button
+                      variant={enroll.attendanceConfirmedAt ? 'secondary' : 'outline'}
+                      size="sm"
+                      icon={<CheckCircle2 className="w-3.5 h-3.5" />}
+                      onClick={() => handleToggleAttendance(enroll)}
+                    >
+                      {enroll.attendanceConfirmedAt ? 'Presente' : 'Confirmar'}
+                    </Button>
+                  </td>
+                  <td className="py-3.5">
+                    <Button
+                      variant={enroll.certificateIssuedAt ? 'secondary' : 'primary'}
+                      size="sm"
+                      disabled={!enroll.attendanceConfirmedAt}
+                      icon={<Award className="w-3.5 h-3.5" />}
+                      onClick={() => handleIssueCertificate(enroll)}
+                    >
+                      {enroll.certificateIssuedAt ? 'Emitido' : 'Emitir'}
+                    </Button>
+                  </td>
+                  <td className="py-3.5 pr-4 text-right text-slate-400">
+                    {new Date(enroll.createdAt).toLocaleDateString('pt-BR')} {new Date(enroll.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Card>
+  ) : null;
+
   const pageBody = (
     <div className={`${!isAuthenticated ? 'max-w-5xl mx-auto px-4 sm:px-6 py-10' : 'space-y-6'}`}>
       
@@ -372,6 +451,8 @@ export const ActivityDetail: React.FC = () => {
               </p>
             </div>
           </Card>
+
+          {participantsCard}
         </div>
 
         
@@ -478,7 +559,7 @@ export const ActivityDetail: React.FC = () => {
                 {isOrganizer && isCreator && (
                   <div className="p-3 bg-emerald-500/5 border border-emerald-500/10 text-emerald-400 text-[11px] font-semibold rounded-xl flex items-start gap-2.5 leading-relaxed">
                     <Info className="w-4 h-4 shrink-0 text-emerald-400 mt-0.5" />
-                    <span>Você é o organizador desta banca. Visualize a lista de inscritos abaixo.</span>
+                    <span>Você é o organizador desta banca. Acompanhe a lista de inscritos ao lado.</span>
                   </div>
                 )}
               </div>
@@ -537,85 +618,6 @@ export const ActivityDetail: React.FC = () => {
         </div>
       </div>
 
-      
-      {isOrganizer && isCreator && (
-        <Card
-          variant="default"
-          title={
-            <div className="flex items-center gap-2">
-              <ClipboardList className="w-5 h-5 text-emerald-400" />
-              <span>Participantes Inscritos ({enrollments.length})</span>
-            </div>
-          }
-          actions={
-            <Button
-              variant="primary"
-              size="sm"
-              icon={<Award className="w-3.5 h-3.5" />}
-              loading={bulkCertificateLoading}
-              disabled={pendingCertificatesCount === 0}
-              onClick={handleIssueAllCertificates}
-            >
-              Emitir presentes ({pendingCertificatesCount})
-            </Button>
-          }
-        >
-          {enrollments.length === 0 ? (
-            <div className="p-8 bg-slate-950 border border-slate-850 rounded-xl text-center text-slate-500 text-xs font-medium">
-              Nenhum aluno se inscreveu nesta atividade ainda.
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-slate-850 text-slate-500 text-xs font-bold uppercase tracking-wider">
-                    <th className="pb-3 pl-4">Nome</th>
-                    <th className="pb-3">E-mail</th>
-                    <th className="pb-3">Presença</th>
-                    <th className="pb-3">Certificado</th>
-                    <th className="pb-3 pr-4 text-right">Inscrito em</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-850 text-xs text-slate-200">
-                  {enrollments.map((enroll) => (
-                    <tr key={enroll.id} className="hover:bg-slate-850/30 transition-colors">
-                      <td className="py-3.5 pl-4 font-bold">{enroll.user.name}</td>
-                      <td className="py-3.5 text-slate-400 flex items-center gap-1.5">
-                        <Mail className="w-3.5 h-3.5" />
-                        {enroll.user.email}
-                      </td>
-                      <td className="py-3.5">
-                        <Button
-                          variant={enroll.attendanceConfirmedAt ? 'secondary' : 'outline'}
-                          size="sm"
-                          icon={<CheckCircle2 className="w-3.5 h-3.5" />}
-                          onClick={() => handleToggleAttendance(enroll)}
-                        >
-                          {enroll.attendanceConfirmedAt ? 'Presente' : 'Confirmar'}
-                        </Button>
-                      </td>
-                      <td className="py-3.5">
-                        <Button
-                          variant={enroll.certificateIssuedAt ? 'secondary' : 'primary'}
-                          size="sm"
-                          disabled={!enroll.attendanceConfirmedAt}
-                          icon={<Award className="w-3.5 h-3.5" />}
-                          onClick={() => handleIssueCertificate(enroll)}
-                        >
-                          {enroll.certificateIssuedAt ? 'Emitido' : 'Emitir'}
-                        </Button>
-                      </td>
-                      <td className="py-3.5 pr-4 text-right text-slate-400">
-                        {new Date(enroll.createdAt).toLocaleDateString('pt-BR')} {new Date(enroll.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </Card>
-      )}
     </div>
   );
 
