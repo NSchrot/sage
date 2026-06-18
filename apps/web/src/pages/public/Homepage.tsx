@@ -1,20 +1,16 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
   ArrowRight,
+  AlertCircle,
   Clock,
   MapPin,
   UserCheck,
   ChevronRight,
-  Terminal,
   Cpu,
-  Award,
-  Code2,
   Presentation,
-  Trophy,
   Users,
-  Sparkles,
   BookOpen,
 } from 'lucide-react';
 import { Button } from '../../components/common/Button';
@@ -45,51 +41,119 @@ const CategoryTag: React.FC<{ children: React.ReactNode; color?: 'teal' | 'amber
   );
 };
 
+interface HomepageActivity {
+  id: string;
+  title: string;
+  description: string;
+  location: string;
+  startsAt: string;
+  endsAt: string;
+  capacity: number;
+  creator: {
+    name: string;
+  };
+  _count?: {
+    enrollments: number;
+  };
+}
+
 export const Homepage: React.FC = () => {
   const { isAuthenticated } = useAuth();
   const [selectedDay, setSelectedDay] = useState(1);
+  const [activities, setActivities] = useState<HomepageActivity[]>([]);
+  const [activitiesLoading, setActivitiesLoading] = useState(true);
+  const [activitiesError, setActivitiesError] = useState<string | null>(null);
 
   const handleScrollToProgram = (e: React.MouseEvent) => {
     e.preventDefault();
     document.getElementById('programacao')?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const scheduleData = [
-    {
-      day: 1,
-      label: 'DIA 01',
-      date: 'Segunda, 22 de Outubro',
-      activities: [
-        { time: '08:30 – 09:00', title: 'Credenciamento e Acolhimento', type: 'Abertura', location: 'Auditório Principal', speaker: 'Comissão Organizadora' },
-        { time: '09:00 – 10:00', title: 'Solenidade de Abertura Oficial', type: 'Abertura', location: 'Auditório Principal', speaker: 'Direção Geral do Câmpus' },
-        { time: '10:00 – 12:00', title: 'Palestra Magna: O Futuro da Informática e Sociedade', type: 'Palestra', location: 'Auditório Principal', speaker: 'Dr. Alexandre Souza' },
-        { time: '14:00 – 17:30', title: 'Oficina: Introdução ao Desenvolvimento Web Moderno', type: 'Oficina', location: 'Laboratório de Informática 2', speaker: 'Prof. Roberto Mendes' },
-        { time: '19:00 – 20:30', title: 'Palestra: Segurança de Dados na Era Digital', type: 'Palestra', location: 'Auditório Principal', speaker: 'Msc. Fernando Silva' },
-      ],
-    },
-    {
-      day: 2,
-      label: 'DIA 02',
-      date: 'Terça, 23 de Outubro',
-      activities: [
-        { time: '08:30 – 12:00', title: 'Oficina: Internet das Coisas com Arduino', type: 'Oficina', location: 'Lab. de Eletrônica e IoT', speaker: 'Prof. Carlos Lima' },
-        { time: '10:30 – 12:00', title: 'Mesa Redonda: Mulheres na Tecnologia', type: 'Especial', location: 'Auditório Principal', speaker: 'Convidadas do Setor de TI' },
-        { time: '14:00 – 17:30', title: 'Oficina: Design e Usabilidade Centrada no Usuário', type: 'Oficina', location: 'Laboratório de Informática 1', speaker: 'Mariana Costa (UX Designer)' },
-        { time: '19:30 – 21:00', title: 'Palestra: IA Aplicada e Mercado de Trabalho', type: 'Palestra', location: 'Auditório Principal', speaker: 'Dr. Eduardo Santos' },
-      ],
-    },
-    {
-      day: 3,
-      label: 'DIA 03',
-      date: 'Quarta, 24 de Outubro',
-      activities: [
-        { time: '09:00 – 12:00', title: 'Mostra de Trabalhos Acadêmicos', type: 'Especial', location: 'Hall de Entrada do Campus', speaker: 'Discentes e Docentes IFPR' },
-        { time: '14:00 – 17:00', title: 'Oficina: Versionamento com Git e GitHub', type: 'Oficina', location: 'Laboratório de Informática 1', speaker: 'Profª Aline Rocha' },
-        { time: '17:00 – 19:30', title: 'Torneio de Programação e Desafios Digitais', type: 'Especial', location: 'Laboratório de Informática 2', speaker: 'Grêmio Estudantil' },
-        { time: '20:00 – 21:30', title: 'Encerramento e Cerimônia de Premiações', type: 'Abertura', location: 'Auditório Principal', speaker: 'Comissão Organizadora SITEC' },
-      ],
-    },
-  ];
+  useEffect(() => {
+    const fetchActivities = async () => {
+      try {
+        setActivitiesLoading(true);
+        setActivitiesError(null);
+
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/activities`);
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.message || 'Erro ao carregar a programação.');
+        }
+
+        setActivities(data);
+      } catch (err: any) {
+        setActivitiesError(err.message || 'Erro ao carregar a programação.');
+      } finally {
+        setActivitiesLoading(false);
+      }
+    };
+
+    fetchActivities();
+  }, []);
+
+  const formatDay = (date: string) => new Date(date).toLocaleDateString('pt-BR', {
+    weekday: 'long',
+    day: '2-digit',
+    month: 'long',
+  });
+
+  const getDateKey = (date: string) => {
+    const parsedDate = new Date(date);
+    const year = parsedDate.getFullYear();
+    const month = String(parsedDate.getMonth() + 1).padStart(2, '0');
+    const day = String(parsedDate.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const formatTime = (date: string) => new Date(date).toLocaleTimeString('pt-BR', {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
+  const getActivityType = (activity: HomepageActivity) => {
+    const content = `${activity.title} ${activity.description}`.toLowerCase();
+    if (content.includes('oficina') || content.includes('workshop')) return 'Oficina';
+    if (content.includes('palestra') || content.includes('mesa')) return 'Palestra';
+    if (content.includes('torneio') || content.includes('competição') || content.includes('mostra')) return 'Especial';
+    return 'Atividade';
+  };
+
+  const getActivityColor = (type: string): 'teal' | 'amber' | 'rose' => {
+    if (type === 'Oficina') return 'teal';
+    if (type === 'Palestra') return 'amber';
+    return 'rose';
+  };
+
+  const scheduleData = useMemo(() => {
+    const grouped = activities.reduce<Record<string, HomepageActivity[]>>((acc, activity) => {
+      const key = getDateKey(activity.startsAt);
+      acc[key] = [...(acc[key] ?? []), activity];
+      return acc;
+    }, {});
+
+    return Object.entries(grouped)
+      .sort(([dateA], [dateB]) => dateA.localeCompare(dateB))
+      .map(([date, dayActivities], index) => ({
+        day: index + 1,
+        label: `DIA ${String(index + 1).padStart(2, '0')}`,
+        date: formatDay(dayActivities[0].startsAt),
+        activities: dayActivities.sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime()),
+      }));
+  }, [activities]);
+
+  useEffect(() => {
+    if (scheduleData.length > 0 && selectedDay > scheduleData.length) {
+      setSelectedDay(1);
+    }
+  }, [scheduleData.length, selectedDay]);
+
+  const selectedSchedule = scheduleData[selectedDay - 1] ?? scheduleData[0];
+  const totalCapacity = activities.reduce((total, activity) => total + activity.capacity, 0);
+  const totalEnrollments = activities.reduce((total, activity) => total + (activity._count?.enrollments ?? 0), 0);
+  const workshopCount = activities.filter(activity => getActivityType(activity) === 'Oficina').length;
+  const lectureCount = activities.filter(activity => getActivityType(activity) === 'Palestra').length;
 
   const highlights = [
     { title: 'Oficinas Práticas', desc: 'Laboratórios hands-on focados em desenvolvimento, novas linguagens e ferramentas essenciais do setor tecnológico.', tag: 'oficina', color: 'teal' as const, wide: true },
@@ -197,15 +261,15 @@ export const Homepage: React.FC = () => {
                   <div className="pt-2 border-t border-neutral-800 dark:border-[#1a1a1a] mt-3 text-neutral-500 text-[10px] tracking-wider">--- STATS ---</div>
                   <div className="grid grid-cols-3 gap-4 pt-3">
                     <div className="text-center">
-                      <span className="block text-2xl font-bold text-white">8</span>
+                      <span className="block text-2xl font-bold text-white">{activitiesLoading ? '...' : workshopCount}</span>
                       <span className="text-[10px] text-neutral-500 uppercase tracking-wider">Oficinas</span>
                     </div>
                     <div className="text-center">
-                      <span className="block text-2xl font-bold text-white">6</span>
+                      <span className="block text-2xl font-bold text-white">{activitiesLoading ? '...' : lectureCount}</span>
                       <span className="text-[10px] text-neutral-500 uppercase tracking-wider">Palestras</span>
                     </div>
                     <div className="text-center">
-                      <span className="block text-2xl font-bold text-white">200<span className="text-teal-400 text-lg">+</span></span>
+                      <span className="block text-2xl font-bold text-white">{activitiesLoading ? '...' : totalCapacity}<span className="text-teal-400 text-lg">+</span></span>
                       <span className="text-[10px] text-neutral-500 uppercase tracking-wider">Participantes</span>
                     </div>
                   </div>
@@ -265,9 +329,9 @@ export const Homepage: React.FC = () => {
               <div className="grid grid-cols-2 gap-4 sm:gap-5">
                 {[
                   { value: '3ª', label: 'Edição', sub: 'do evento' },
-                  { value: '200+', label: 'Participantes', sub: 'esperados' },
-                  { value: '8', label: 'Oficinas', sub: 'práticas' },
-                  { value: '20h', label: 'Atividades', sub: 'de programação' },
+                  { value: activitiesLoading ? '...' : `${totalCapacity}+`, label: 'Participantes', sub: 'esperados' },
+                  { value: activitiesLoading ? '...' : String(workshopCount), label: 'Oficinas', sub: 'práticas' },
+                  { value: activitiesLoading ? '...' : String(activities.length), label: 'Atividades', sub: 'de programação' },
                 ].map((stat, i) => (
                   <div
                     key={i}
@@ -341,69 +405,110 @@ export const Homepage: React.FC = () => {
 
           
           <div className="flex flex-col items-center space-y-10">
-            <div className="inline-flex p-1 bg-white dark:bg-[#0a0a0a] border border-neutral-200 dark:border-[#1a1a1a] rounded-xl gap-1">
-              {scheduleData.map((d) => (
-                <button
-                  key={d.day}
-                  onClick={() => setSelectedDay(d.day)}
-                  className={`px-5 py-2.5 rounded-lg text-xs font-mono font-bold tracking-wider transition-all cursor-pointer ${
-                    selectedDay === d.day
-                      ? 'bg-teal-600 text-white shadow-md'
-                      : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-50 dark:hover:bg-neutral-900'
-                  }`}
-                >
-                  [{d.label}]
-                </button>
-              ))}
-            </div>
+            {activitiesError && (
+              <div className="w-full max-w-3xl rounded-xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-600 dark:text-rose-400 flex items-start gap-2.5">
+                <AlertCircle className="w-4.5 h-4.5 shrink-0 mt-0.5" />
+                <span>{activitiesError}</span>
+              </div>
+            )}
+
+            {(activitiesLoading || scheduleData.length > 0) && (
+              <div className="flex flex-wrap justify-center p-1 bg-white dark:bg-[#0a0a0a] border border-neutral-200 dark:border-[#1a1a1a] rounded-xl gap-1">
+                {scheduleData.map((d) => (
+                  <button
+                    key={d.day}
+                    onClick={() => setSelectedDay(d.day)}
+                    className={`px-5 py-2.5 rounded-lg text-xs font-mono font-bold tracking-wider transition-all cursor-pointer ${
+                      selectedDay === d.day
+                        ? 'bg-teal-600 text-white shadow-md'
+                        : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-50 dark:hover:bg-neutral-900'
+                    }`}
+                  >
+                    [{d.label}]
+                  </button>
+                ))}
+                {activitiesLoading && (
+                  <span className="px-5 py-2.5 rounded-lg text-xs font-mono font-bold tracking-wider text-neutral-400 dark:text-neutral-600">
+                    carregando...
+                  </span>
+                )}
+              </div>
+            )}
 
             
             <div className="w-full max-w-3xl">
-              <div className="flex items-center justify-between border-b border-neutral-200 dark:border-[#1a1a1a] pb-3 mb-8">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-neutral-200 dark:border-[#1a1a1a] pb-3 mb-8">
                 <span className="text-xs font-mono text-neutral-400 dark:text-neutral-600 uppercase tracking-wider">
-                  edição_atual //
+                  {totalEnrollments} inscrito{totalEnrollments === 1 ? '' : 's'} //
                 </span>
-                <span className="text-sm font-semibold text-teal-600 dark:text-teal-400 font-display">
-                  {scheduleData[selectedDay - 1].date}
+                <span className="text-sm font-semibold text-teal-600 dark:text-teal-400 font-display sm:text-right">
+                  {selectedSchedule?.date ?? 'Programação em definição'}
                 </span>
               </div>
 
               
-              <div className="relative border-l-2 border-neutral-200 dark:border-[#1a1a1a] pl-7 ml-3 space-y-6">
-                {scheduleData[selectedDay - 1].activities.map((act, idx) => (
-                  <div key={idx} className="relative group">
-                    
-                    <div className="absolute -left-[33px] top-2 w-3 h-3 rounded-full border-2 border-teal-500 bg-neutral-100 dark:bg-[#080808] group-hover:bg-teal-500 transition-colors" />
-
-                    <div className="bg-white dark:bg-[#0a0a0a] border border-neutral-200 dark:border-[#1a1a1a] p-5 rounded-xl space-y-3 hover:border-neutral-300 dark:hover:border-[#2a2a2a] transition-all">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <div className="flex items-center gap-2 text-xs font-mono font-bold text-teal-700 dark:text-teal-400">
-                          <Clock className="w-3.5 h-3.5 text-teal-500" />
-                          <span>{act.time}</span>
-                        </div>
-                        <CategoryTag color={act.type === 'Oficina' ? 'teal' : act.type === 'Especial' ? 'amber' : 'rose'}>
-                          {act.type}
-                        </CategoryTag>
-                      </div>
-
-                      <h4 className="text-sm sm:text-base font-bold text-neutral-900 dark:text-white font-display tracking-tight">
-                        {act.title}
-                      </h4>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-neutral-500 dark:text-neutral-500 border-t border-neutral-100 dark:border-[#1a1a1a] pt-3">
-                        <div className="flex items-center gap-1.5">
-                          <MapPin className="w-3.5 h-3.5 text-teal-500 shrink-0" />
-                          <span className="truncate">{act.location}</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <UserCheck className="w-3.5 h-3.5 text-teal-500 shrink-0" />
-                          <span className="truncate">{act.speaker}</span>
-                        </div>
+              {activitiesLoading ? (
+                <div className="relative border-l-2 border-neutral-200 dark:border-[#1a1a1a] pl-7 ml-3 space-y-6">
+                  {[0, 1, 2].map(item => (
+                    <div key={item} className="relative">
+                      <div className="absolute -left-[33px] top-2 w-3 h-3 rounded-full border-2 border-neutral-300 dark:border-[#2a2a2a] bg-neutral-100 dark:bg-[#080808]" />
+                      <div className="bg-white dark:bg-[#0a0a0a] border border-neutral-200 dark:border-[#1a1a1a] p-5 rounded-xl space-y-3">
+                        <div className="h-4 w-28 rounded bg-neutral-200 dark:bg-neutral-900 animate-pulse" />
+                        <div className="h-5 w-3/4 rounded bg-neutral-200 dark:bg-neutral-900 animate-pulse" />
+                        <div className="h-4 w-full rounded bg-neutral-100 dark:bg-neutral-900/70 animate-pulse" />
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : !selectedSchedule ? (
+                <div className="bg-white dark:bg-[#0a0a0a] border border-neutral-200 dark:border-[#1a1a1a] rounded-xl p-8 text-center">
+                  <BookOpen className="w-8 h-8 text-teal-500 mx-auto mb-3" />
+                  <h4 className="text-base font-bold text-neutral-900 dark:text-white font-display">Programação em construção</h4>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-500 mt-2">
+                    As atividades cadastradas no sistema aparecerão aqui automaticamente.
+                  </p>
+                </div>
+              ) : (
+                <div className="relative border-l-2 border-neutral-200 dark:border-[#1a1a1a] pl-7 ml-3 space-y-6">
+                  {selectedSchedule.activities.map((act) => {
+                    const type = getActivityType(act);
+                    const activeEnrollments = act._count?.enrollments ?? 0;
+
+                    return (
+                      <Link key={act.id} to={`/activities/${act.id}`} className="relative group block">
+                        <div className="absolute -left-[33px] top-2 w-3 h-3 rounded-full border-2 border-teal-500 bg-neutral-100 dark:bg-[#080808] group-hover:bg-teal-500 transition-colors" />
+
+                        <div className="bg-white dark:bg-[#0a0a0a] border border-neutral-200 dark:border-[#1a1a1a] p-5 rounded-xl space-y-3 hover:border-neutral-300 dark:hover:border-[#2a2a2a] transition-all">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div className="flex items-center gap-2 text-xs font-mono font-bold text-teal-700 dark:text-teal-400">
+                              <Clock className="w-3.5 h-3.5 text-teal-500" />
+                              <span>{formatTime(act.startsAt)} - {formatTime(act.endsAt)}</span>
+                            </div>
+                            <CategoryTag color={getActivityColor(type)}>
+                              {type}
+                            </CategoryTag>
+                          </div>
+
+                          <h4 className="text-sm sm:text-base font-bold text-neutral-900 dark:text-white font-display tracking-tight">
+                            {act.title}
+                          </h4>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-neutral-500 dark:text-neutral-500 border-t border-neutral-100 dark:border-[#1a1a1a] pt-3">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <MapPin className="w-3.5 h-3.5 text-teal-500 shrink-0" />
+                              <span className="min-w-0 truncate">{act.location}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <UserCheck className="w-3.5 h-3.5 text-teal-500 shrink-0" />
+                              <span className="min-w-0 truncate">{activeEnrollments}/{act.capacity} inscritos - {act.creator.name}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
         </div>
